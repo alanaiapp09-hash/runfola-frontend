@@ -1,0 +1,113 @@
+{
+  "restaurante": {
+    "nombre": "Runfola",
+    "subtitulo": "coffee · pizzería · bar"
+  },
+  "categorias": [
+    {
+      "id": "entrantes",
+      "label": "Entrantes",
+      "dest": "cocina",
+      "items": [
+        { "id": "en1", "n": "Provoleta",            "p": 8.90 },
+        { "id": "en2", "n": "Albóndigas de Napoli", "p": 9.90 },
+        { "id": "en3", "n": "Fingers de pollo",     "p": 8.00 },
+        { "id": "en4", "n": "Patatas Frankfurt",    "p": 8.00 }
+      ]
+    },
+    {
+      "id": "compartir",
+      "label": "Para compartir",
+      "dest": "cocina",
+      "items": [
+        { "id": "co1", "n": "Pan de ajo",       "p": 7.90 },
+        { "id": "co2", "n": "Tequeños",         "p": 7.90 },
+        { "id": "co3", "n": "Patatas Bravioli", "p": 7.00 }
+      ]
+    },
+    {
+      "id": "ensaladas",
+      "label": "Ensaladas",
+      "dest": "cocina",
+      "items": [
+        { "id": "es1", "n": "Caprese — tomate, pesto, mozzarella",                          "p": 9.90 },
+        { "id": "es2", "n": "Burrata — tomate, burrata, salsa de trufa o pesto",            "p": 9.90 },
+        { "id": "es3", "n": "César — lechuga, pollo, picatostes, salsa César",              "p": 9.90 },
+        { "id": "es4", "n": "Atún — maíz, atún, cebolla, aceitunas negras",                "p": 9.90 }
+      ]
+    },
+    {
+      "id": "pizzas",
+      "label": "Pizzas",
+      "dest": "cocina",
+      "items": [
+        { "id": "pz1",  "n": "Margarita — tomate, mozzarella",                                                         "p":  9.90 },
+        { "id": "pz2",  "n": "Tentazione — tomate, queso de cabra, jamón york, maíz, mozzarella",                      "p": 12.90 },
+        { "id": "pz3",  "n": "Carbonara — tomate, nata, bacon, cebolla, huevo, mozzarella",                            "p": 12.90 },
+        { "id": "pz4",  "n": "Diavola — tomate, queso de cabra, pepperoni, mozzarella",                                "p": 11.90 },
+        { "id": "pz5",  "n": "Diavola Dolce — tomate, queso de cabra, pepperoni, miel, mozzarella",                    "p": 11.90 },
+        { "id": "pz6",  "n": "Diavola Inferno — tomate, queso de cabra, pepperoni, miel, tabasco, mozzarella",         "p": 11.90 },
+        { "id": "pz7",  "n": "Bella Italia — tomate, jamón ibérico, rúcula, mozzarella",                               "p": 12.90 },
+        { "id": "pz8",  "n": "Prosciutto e Funghi — tomate, jamón york, champiñones, mozzarella",                      "p": 12.90 },
+        { "id": "pz9",  "n": "4 Formaggi — tomate, queso de cabra, gorgonzola, mozzarella",                            "p": 11.90 },
+        { "id": "pz10", "n": "Capricciosa — tomate, alcachofas, champiñones, jamón york, aceitunas negras",            "p": 12.90 },
+        { "id": "pz11", "n": "Tonno — tomate, atún, cebolla, mozzarella",                                              "p": 12.90 },
+        { "id": "pz12", "n": "Franfumina — tomate, salchicha Frankfurt, bacon, mozzarella",                            "p": 12.90 },
+        { "id": "pz13", "n": "Pizza de queso — tomate, mozzarella, ingredientes a elegir",                             "p": 12.90 }
+      ]
+    },
+    {
+      "id": "pizzetas",
+      "label": "Pizzetas",
+      "dest": "cocina",
+      "nota_cat": "Formato individual. Ingredientes extra +1 €",
+      "items": [
+        { "id": "pt1",  "n": "Pizzeta Margarita",         "p":  9.90 },
+        { "id": "pt2",  "n": "Pizzeta Tentazione",        "p": 12.90 },
+        { "id": "pt3",  "n": "Pizzeta Carbonara",         "p": 12.90 },
+        { "id": "pt4",  "n": "Pizzeta Diavola",           "p": 11.90 },
+        { "id": "pt5",  "n": "Pizzeta Diavola Dolce",     "p": 11.90 },
+        { "id": "pt6",  "n": "Pizzeta Diavola Inferno",   "p": 11.90 },
+        { "id": "pt7",  "n": "Pizzeta Bella Italia",      "p": 12.90 },
+        { "id": "pt8",  "n": "Pizzeta Prosciutto e Funghi","p": 12.90 },
+        { "id": "pt9",  "n": "Pizzeta 4 Formaggi",        "p": 11.90 },
+        { "id": "pt10", "n": "Pizzeta Capricciosa",       "p": 12.90 },
+        { "id": "pt11", "n": "Pizzeta Tonno",             "p": 12.90 },
+        { "id": "pt12", "n": "Pizzeta Franfumina",        "p": 12.90 }
+      ]
+    },
+    {
+      "id": "postres",
+      "label": "Postres",
+      "dest": "cocina",
+      "items": [
+        { "id": "po1", "n": "Tarta de queso", "p": 5.00 },
+        { "id": "po2", "n": "Flan",           "p": 3.90 },
+        { "id": "po3", "n": "Natillas",       "p": 3.90 },
+        { "id": "po4", "n": "Helado",         "p": 3.00 },
+        { "id": "po5", "n": "Granizado",      "p": 3.50 }
+      ]
+    },
+    {
+      "id": "pizzetas_dulce",
+      "label": "Pizzetas dulce",
+      "dest": "cocina",
+      "items": [
+        { "id": "pd1", "n": "Pizzeta Nutella",   "p": 8.00 },
+        { "id": "pd2", "n": "Pizzeta Pistacho",  "p": 8.00 }
+      ]
+    },
+    {
+      "id": "bebidas",
+      "label": "Bebidas",
+      "dest": "barra",
+      "items": [
+        { "id": "be1", "n": "Agua",              "p": 1.50 },
+        { "id": "be2", "n": "Refresco",          "p": 2.50 },
+        { "id": "be3", "n": "Cerveza",           "p": 2.80 },
+        { "id": "be4", "n": "Vino de la casa",   "p": 6.00 },
+        { "id": "be5", "n": "Café",              "p": 1.50 }
+      ]
+    }
+  ]
+}

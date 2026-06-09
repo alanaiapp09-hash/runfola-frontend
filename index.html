@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Runfola · QuickOrder</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#111111">
+  <style>
+    :root{--bg:#111;--panel:#1b1b1b;--line:#303030;--txt:#fff;--muted:#a0a0a0;--blue:#00CFFF;--green:#ADFF2F;--orange:#FF6B35;--purple:#D946EF;--danger:#ff5b5b;--ok:#41d36f;--warn:#fff0a8}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--txt)}
+    button,input,textarea,select{font:inherit}
+    .app{max-width:1200px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;background:#171717;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+    .title{font-weight:800;font-size:20px}.sub{font-size:12px;color:var(--muted)}
+    .right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.badge{font-size:12px;background:var(--green);color:#173100;padding:4px 10px;border-radius:999px;font-weight:800}.pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800;background:#2a2a2a;color:#bbb}
+    .screen{display:none}.screen.active{display:block}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;padding:12px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px}
+    .mesa{cursor:pointer;min-height:96px}.mesa.sel{outline:2px solid var(--orange)} .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px}.libre{background:var(--ok)}.ocupada{background:var(--orange)}
+    .tabs{display:flex;gap:8px;overflow:auto;padding:12px;border-bottom:1px solid var(--line)}.tab{padding:10px 14px;border-radius:999px;border:0;font-weight:800;cursor:pointer;white-space:nowrap}
+    .b{background:var(--blue);color:#022c34}.e{background:var(--green);color:#233f00}.p{background:var(--orange);color:#431500}.po{background:var(--purple);color:#2b0032}.tab.active{filter:brightness(1.06)}
+    .destbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px}.dest{border:0;border-radius:12px;padding:10px 12px;font-weight:800;color:#fff;cursor:pointer}.dest.bar{background:var(--blue)}.dest.kit{background:var(--orange)}.dest.cash{background:var(--purple)}
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:14px 12px;border-bottom:1px solid var(--line)}
+    .qty{display:flex;align-items:center;gap:10px}.qbtn{width:46px;height:46px;border-radius:50%;border:0;font-size:24px;font-weight:900;color:#fff;cursor:pointer}.qplus{background:var(--green);color:#173100}.qminus{background:var(--danger)}.qnum{min-width:24px;text-align:center;font-size:18px;font-weight:900}
+    .split{display:grid;grid-template-columns:1fr;min-height:0}@media (min-width:960px){.split{grid-template-columns:1fr 360px}.rightpane{border-left:1px solid var(--line)}}
+    .footer{display:flex;gap:10px;align-items:center;padding:12px;border-top:1px solid var(--line);background:#171717;position:sticky;bottom:60px;z-index:8}.tot{flex:1;color:#ddd;font-size:16px;font-weight:700}.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:900;color:#fff;cursor:pointer}.send{background:var(--orange)}.bill{background:var(--purple)}.close{background:var(--ok);color:#173100}
+    .small{font-size:12px;color:var(--muted)} .tag{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800}.pend{background:#ffefbf;color:#614400}
+    .nav{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;background:#171717;border-top:1px solid var(--line);position:sticky;bottom:0;z-index:10}.nav button{border:0;border-radius:12px;padding:12px 10px;font-weight:900;background:#2a2a2a;color:#ccc;cursor:pointer}.nav button.active{background:var(--orange);color:#fff}
+    textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#222;color:#fff}
+    .section-title{padding:10px 14px 4px;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+    .add-client{display:flex;gap:8px;padding:8px 12px 12px}
+    .add-client input{flex:1;padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:#222;color:#fff;font-size:14px}
+    .add-client input::placeholder{color:#555}
+    .add-client button{padding:11px 16px;border-radius:12px;border:0;background:var(--blue);color:#022c34;font-weight:900;cursor:pointer;white-space:nowrap;font-size:14px}
+    .cliente{cursor:pointer;min-height:96px;border-color:var(--blue)}.cliente.sel{outline:2px solid var(--blue)}
+    .cli-name{font-size:15px;font-weight:900;color:var(--blue)}
+    .toast{position:fixed;right:14px;top:70px;z-index:9999;display:none;max-width:310px;background:var(--warn);color:#5c4600;border:1px solid #7a6600;border-radius:14px;padding:12px 14px;box-shadow:0 14px 34px rgba(0,0,0,.35)}
+    .toast.show{display:block;animation:pop .18s ease-out}.toast-title{font-weight:900;font-size:14px;margin-bottom:2px}.toast-body{font-size:13px;line-height:1.35}.toast-actions{display:flex;justify-content:flex-end;margin-top:8px}.toast-actions button{background:#111;color:#fff;border:0;border-radius:10px;padding:8px 10px;font-weight:800}
+    @keyframes pop{from{transform:translateY(-8px);opacity:.5}to{transform:translateY(0);opacity:1}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="title" id="restauranteNombre">QuickOrder</div>
+      <div class="sub" id="restauranteSub">coffee · pizzería · bar</div>
+      <div class="sub" id="sub" style="margin-top:2px">Selecciona una mesa</div>
+    </div>
+    <div class="right"><span class="badge" id="conn">Local</span><span class="pill" id="roleTag">waiter</span></div>
+  </header>
+
+  <section class="screen active" id="mesas">
+    <div class="section-title">Mesas</div>
+    <div class="grid" id="mesaGrid"></div>
+    <div class="section-title" style="margin-top:4px">Clientes en barra</div>
+    <div class="add-client">
+      <input id="clienteNombre" placeholder="Nombre del cliente…" maxlength="32" onkeydown="if(event.key==='Enter')addCliente()">
+      <button onclick="addCliente()">+ Cliente</button>
+    </div>
+    <div class="grid" id="clienteGrid"></div>
+  </section>
+
+  <section class="screen" id="pedido">
+    <div class="split">
+      <div>
+        <div class="tabs" id="tabs"></div>
+        <div class="destbar">
+          <button class="dest bar" onclick="sendTo('barra')">Enviar a barra</button>
+          <button class="dest kit" onclick="sendTo('cocina')">Enviar a cocina</button>
+          <button class="dest cash" onclick="sendTo('caja')">Enviar a caja</button>
+        </div>
+        <div id="menu"></div>
+      </div>
+      <aside class="rightpane">
+        <div class="card" style="margin:12px">
+          <div><b>Resumen mesa</b></div>
+          <div class="small" id="mesaInfo">Sin mesa seleccionada</div>
+          <div style="margin-top:10px"><textarea id="nota" rows="3" placeholder="Nota para cocina/barra..."></textarea></div>
+        </div>
+        <div class="card" style="margin:12px;margin-top:0">
+          <div><b>Cuenta temporal</b></div>
+          <div class="small" id="cuentaBox">No hay productos</div>
+        </div>
+      </aside>
+    </div>
+    <div class="footer">
+      <div class="tot" id="tot">Total: 0.00 €</div>
+      <button class="btn send" id="btnSend">Enviar</button>
+      <button class="btn bill" id="btnBill">Cuenta</button>
+      <button class="btn close" id="btnClose">Cerrar</button>
+    </div>
+  </section>
+
+  <section class="screen" id="cola"><div class="grid" id="queue"></div></section>
+  <section class="screen" id="admin"><div class="grid" id="adminBox"></div></section>
+
+  <nav class="nav">
+    <button class="active" data-s="mesas">Mesas</button>
+    <button data-s="pedido">Pedido</button>
+    <button data-s="cola">Pantallas</button>
+    <button data-s="admin">Admin</button>
+  </nav>
+</div>
+
+<div class="toast" id="toast">
+  <div class="toast-title" id="toastTitle">Aviso</div>
+  <div class="toast-body" id="toastBody"></div>
+  <div class="toast-actions"><button onclick="hideToast()">OK</button></div>
+</div>
+
+<script>
+let CATS=[];
+let MENU={};
+let mesas=Array.from({length:20},(_,i)=>({id:i+1,tipo:'mesa',estado:i<4?'ocupada':'libre',items:[],total:0}));
+let clientes=[];
+let clienteSeq=1;
+let mesaActual=null,catActual=null,ws=null,toastTimer=null;
+const params=new URLSearchParams(location.search);
+const role=params.get('role')||'waiter';
+document.getElementById('roleTag').textContent=role;
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+const money=v=>Number(v||0).toFixed(2)+' €';
+const calcTotal=m=>m.items.reduce((a,x)=>a+(x.p*x.q),0);
+
+// Asignar color CSS a cada categoría en orden rotativo
+const CAT_COLORS=['b','e','p','po','b','e','p','po'];
+
+async function loadMenu(){
+  try{
+    const r=await fetch('./menu.json');
+    const data=await r.json();
+    // Nombre del restaurante
+    if(data.restaurante){
+      document.getElementById('restauranteNombre').textContent=data.restaurante.nombre||'QuickOrder';
+      document.getElementById('restauranteSub').textContent=data.restaurante.subtitulo||'';
+      document.title=`${data.restaurante.nombre} · QuickOrder`;
+    }
+    // Construir CATS y MENU desde JSON
+    CATS=data.categorias.map((c,i)=>({
+      id:c.id, label:c.label, cls:CAT_COLORS[i%CAT_COLORS.length],
+      dest:c.dest||'cocina', nota_cat:c.nota_cat||''
+    }));
+    data.categorias.forEach(c=>{ MENU[c.id]=c.items; });
+    catActual=CATS[0].id;
+  } catch(e){
+    // Fallback mínimo si no carga el JSON
+    console.warn('No se pudo cargar menu.json, usando fallback');
+    CATS=[{id:'general',label:'Carta',cls:'p',dest:'cocina'}];
+    MENU={general:[{id:'g1',n:'Producto',p:0}]};
+    catActual='general';
+  }
+  renderAll();
+  connectWS();
+}
+
+function showScreen(id){$$('.screen').forEach(x=>x.classList.remove('active'));const el=document.getElementById(id);if(el)el.classList.add('active');$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.s===id));}
+function selectMesa(id){mesaActual=id;showScreen('pedido');renderAll();}
+window.selectMesa=selectMesa;
+
+function renderMesas(){
+  const grid=$('#mesaGrid');
+  grid.innerHTML=mesas.map(m=>`<div class="card mesa ${mesaActual===m.id?'sel':''}" onclick="selectMesa(${m.id})"><div><span class="dot ${m.estado}"></span><b>Mesa ${m.id}</b></div><div class="small">${m.estado}</div><div class="small">${m.items.length} ítems</div><div style="margin-top:8px;font-size:18px;font-weight:900">${money(calcTotal(m))}</div></div>`).join('');
+  const cg=$('#clienteGrid');
+  cg.innerHTML=clientes.length
+    ? clientes.map(c=>`<div class="card cliente ${mesaActual===c.id?'sel':''}" onclick="selectMesa('${c.id}')"><div class="cli-name">👤 ${c.nombre}</div><div class="small">barra · ${c.estado}</div><div class="small">${c.items.length} ítems</div><div style="margin-top:8px;font-size:18px;font-weight:900">${money(calcTotal(c))}</div></div>`).join('')
+    : '<div class="small" style="padding:8px 12px;color:#555">Sin clientes abiertos</div>';
+}
+function addCliente(){
+  const input=$('#clienteNombre');
+  const nombre=input.value.trim();
+  if(!nombre) return input.focus();
+  const id='cli_'+clienteSeq++;
+  clientes.push({id,tipo:'cliente',nombre,estado:'abierta',items:[],total:0});
+  input.value='';
+  selectMesa(id);
+  emit({type:'sync',mesas,clientes});
+}
+window.addCliente=addCliente;
+function getEntidad(id){
+  if(typeof id==='number') return mesas.find(x=>x.id===id);
+  return clientes.find(x=>x.id===id);
+}
+function allEntidades(){ return [...mesas,...clientes]; }
+function renderTabs(){ $('#tabs').innerHTML=CATS.map(c=>`<button class="tab ${c.cls} ${catActual===c.id?'active':''}" onclick="catActual='${c.id}';renderAll()">${c.label}</button>`).join(''); }
+function renderMenu(){
+  if(!catActual||!CATS.length) return;
+  const cat=CATS.find(c=>c.id===catActual); const m=mesaActual!=null?getEntidad(mesaActual):null;
+  const notaCat=cat.nota_cat?`<div class="card" style="margin:12px"><div class="small" style="color:var(--warn)">${cat.nota_cat}</div></div>`:'';
+  $('#menu').innerHTML=`<div class="card" style="margin:12px"><div><b>Destino:</b> ${cat.dest}</div></div>${notaCat}`+
+    (MENU[catActual]||[]).map(it=>{const found=m?.items.find(x=>x.id===it.id);const q=found?found.q:0;return `<div class="row"><div><div><b>${it.n}</b></div><div class="small">${money(it.p)}</div></div><div class="qty"><button class="qbtn qminus" onclick="chg('${it.id}',-1)">-</button><div class="qnum">${q}</div><button class="qbtn qplus" onclick="chg('${it.id}',1)">+</button></div></div>`}).join('');
+}
+function renderSummary(){
+  const m=mesaActual!=null?getEntidad(mesaActual):null;
+  const label=m?(m.tipo==='cliente'?`Cliente: ${m.nombre}`:`Mesa ${m.id}`):'Selecciona una mesa';
+  $('#sub').textContent=m?`${label} · ${money(calcTotal(m))}`:'Selecciona una mesa';
+  $('#tot').textContent='Total: '+money(m?calcTotal(m):0);
+  $('#mesaInfo').textContent=m?`${label} · ${m.estado} · ${m.items.length} ítems`:'Sin mesa seleccionada';
+  $('#cuentaBox').innerHTML=!m||!m.items.length?'No hay productos':m.items.map(x=>`<div style="padding:8px 0;border-bottom:1px solid #303030"><b>${x.q}x ${x.n}</b><div class="small">${money(x.p)} · ${x.dest}</div></div>`).join('');
+}
+function renderQueue(){
+  const q=$('#queue');
+  const activas=allEntidades().filter(m=>m.items.length);
+  if(role==='kitchen'||role==='bar'||role==='cash'){
+    q.innerHTML=activas.map(m=>{const lbl=m.tipo==='cliente'?`👤 ${m.nombre}`:`Mesa ${m.id}`;return `<div class="card"><div><b>${lbl}</b> <span class="tag pend">Pendiente</span></div><div class="small" style="margin-top:8px">${m.items.map(x=>`${x.q}x ${x.n} (${x.dest})`).join('<br>')}</div><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">${role==='kitchen'?`<button class='btn close' onclick='markReady("${m.id}")'>Listo</button>`:''}</div></div>`;}).join('') || '<div class="card">Sin comandas</div>';
+  } else {
+    q.innerHTML=activas.map(m=>{const lbl=m.tipo==='cliente'?`👤 ${m.nombre}`:`Mesa ${m.id}`;return `<div class="card"><b>${lbl}</b><div class="small" style="margin-top:8px">${m.items.map(x=>`${x.q}x ${x.n}`).join('<br>')}</div></div>`;}).join('') || '<div class="card">Sin comandas</div>';
+  }
+}
+function renderAdmin(){ $('#adminBox').innerHTML=`<div class="card"><b>Roles</b><div class="small">waiter = camarero, kitchen = cocina, bar = barra, cash = caja.</div></div><div class="card"><b>Local</b><div class="small">Local significa que no hay backend conectado. En vivo significa que el WebSocket está conectado.</div></div><div class="card"><b>Comanda</b><div class="small">Al pulsar Enviar, se manda la mesa actual con sus líneas y nota al destino seleccionado.</div></div>`; }
+function renderAll(){ renderMesas(); renderTabs(); renderMenu(); renderSummary(); renderQueue(); renderAdmin(); }
+function chg(id,d){
+  if(mesaActual==null){ alert('Selecciona una mesa o cliente'); return; }
+  const mesa=getEntidad(mesaActual);
+  const prod=(MENU[catActual]||[]).find(x=>x.id===id);
+  if(!prod) return;
+  let it=mesa.items.find(x=>x.id===id);
+  if(!it && d>0){ mesa.items.push({id,n:prod.n,p:prod.p,q:1,cat:catActual,dest:CATS.find(c=>c.id===catActual).dest}); }
+  else if(it){ it.q += d; if(it.q<=0) mesa.items=mesa.items.filter(x=>x.id!==id); }
+  mesa.estado='ocupada'; mesa.total=calcTotal(mesa); emit({type:'sync',mesas,clientes}); renderAll();
+}
+window.chg=chg;
+function buildPayload(type,dest){ const mesa=getEntidad(mesaActual); const lbl=mesa.tipo==='cliente'?mesa.nombre:`Mesa ${mesa.id}`; return {type,dest,mesa:mesaActual,label:lbl,items:mesa.items,nota:$('#nota').value,total:mesa.total,time:new Date().toISOString()}; }
+function sendTo(dest){ if(mesaActual==null)return alert('Selecciona una mesa o cliente'); const mesa=getEntidad(mesaActual); if(!mesa.items.length)return alert('No hay items'); emit(buildPayload('order',dest)); const lbl=mesa.tipo==='cliente'?mesa.nombre:`Mesa ${mesa.id}`; toast('Comanda enviada',`${lbl} enviada a ${dest}.`); }
+window.sendTo=sendTo;
+function send(){ const cat=CATS.find(c=>c.id===catActual); sendTo(cat.dest); }
+function askBill(){ if(mesaActual==null)return alert('Selecciona una mesa o cliente'); emit(buildPayload('bill','caja')); const mesa=getEntidad(mesaActual); const lbl=mesa.tipo==='cliente'?mesa.nombre:`Mesa ${mesa.id}`; toast('Cuenta solicitada',`${lbl} pidió cuenta.`); }
+function closeTable(){
+  if(mesaActual==null)return;
+  const entidad=getEntidad(mesaActual);
+  entidad.items=[]; entidad.total=0; entidad.estado='libre';
+  if(entidad.tipo==='cliente'){ clientes=clientes.filter(c=>c.id!==mesaActual); }
+  $('#nota').value=''; emit({type:'close',mesa:mesaActual,clientes}); mesaActual=null; renderAll(); showScreen('mesas');
+}
+function markReady(mesaId){ const mesa=getEntidad(mesaId); if(!mesa||!mesa.items.length)return; const item=mesa.items[0].n; const lbl=mesa.tipo==='cliente'?mesa.nombre:`Mesa ${mesa.id}`; emit({type:'ready',mesa:mesaId,item,label:lbl,action:'ready'}); toast('Aviso enviado',`${lbl}: ${item} listo para servir.`); }
+window.markReady=markReady;
+function hideToast(){ const t=$('#toast'); t.classList.remove('show'); if(toastTimer) clearTimeout(toastTimer); }
+window.hideToast=hideToast;
+function toast(title,body){ $('#toastTitle').textContent=title; $('#toastBody').textContent=body; const t=$('#toast'); t.classList.add('show'); if(toastTimer) clearTimeout(toastTimer); toastTimer=setTimeout(hideToast,4800); }
+function requestLocalNotifications(){
+  if(!('Notification' in window)) return;
+  const ask=()=>{ if(Notification.permission==='default') Notification.requestPermission().catch(()=>{}); };
+  document.addEventListener('click', ask, {once:true});
+}
+function systemNotify(title, body){
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='granted'){
+    try{ new Notification(title,{body}); }catch(e){}
+  }
+}
+function connectWS(){
+  const backend=params.get('backend');
+  if(!backend){ $('#conn').textContent='Local'; return; }
+  try{
+    ws=new WebSocket(`${backend}?role=${role}`);
+    ws.onopen=()=>$('#conn').textContent='En vivo';
+    ws.onclose=()=>$('#conn').textContent='Local';
+    ws.onmessage=(e)=>{
+      const msg=JSON.parse(e.data);
+      if(msg.type==='sync'){
+        if(Array.isArray(msg.mesas)) mesas=msg.mesas;
+        if(Array.isArray(msg.clientes)) clientes=msg.clientes;
+        renderAll();
+      }
+      if(msg.type==='notify' && role==='waiter' && msg.action==='ready'){
+        const lbl=msg.label||(msg.mesa?`Mesa ${msg.mesa}`:'');
+        const txt=`${lbl}: ${msg.item} listo para llevar`;
+        toast('Plato listo', txt);
+        systemNotify('Plato listo', txt);
+        if(navigator.vibrate) navigator.vibrate([120,80,120]);
+      }
+    };
+  }catch(e){ $('#conn').textContent='Local'; }
+}
+function emit(payload){ if(ws && ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify(payload)); }
+
+document.getElementById('btnSend').onclick=send;
+document.getElementById('btnBill').onclick=askBill;
+document.getElementById('btnClose').onclick=closeTable;
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>showScreen(b.dataset.s));
+requestLocalNotifications();
+loadMenu();
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
+</script>
+</body>
+</html>
