@@ -213,7 +213,7 @@ const send = p => { if(ws?.readyState===1) ws.send(JSON.stringify(p)); };
 document.getElementById('tb-name').textContent = MENU_DATA.restaurante.nombre;
 document.getElementById('tb-sub').textContent  = MENU_DATA.restaurante.subtitulo;
 document.title = MENU_DATA.restaurante.nombre;
-document.getElementById('role-tag').textContent = ROL;
+$('#role-tag').textContent = ROL==='waiter' ? 'Camarer@' : ROL;
 
 if(ROL==='waiter')       buildWaiter();
 else if(ROL==='kitchen') buildStation('cocina','🍳 Cocina');
@@ -558,8 +558,8 @@ function connectWS(){
     ws = new WebSocket(WSU+'?role='+ROL);
     ws.onopen  = () => setLive(true);
     ws.onclose = () => { ws=null; setLive(false); setTimeout(connectWS, 3000); };
-    ws.onerror = () => setLive(false);
-    ws.onmessage = ev => {
+    ws.onerror = () => { ws=null; setLive(false); };
+    ws.addEventListener('message', ev => {
       let msg;
       try{ msg=JSON.parse(ev.data); }catch{ return; }
 
@@ -595,7 +595,7 @@ function connectWS(){
         if(Notification?.permission==='granted')
           new Notification('Plato listo',{body:txt}).catch(()=>{});
       }
-    };
+    });
   }catch(e){ setLive(false); }
 }
 
