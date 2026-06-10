@@ -367,11 +367,18 @@ function updTotal(){
 }
 
 function sendTo(dest){
-  if(mesaActual==null) return;
+  if(mesaActual==null){ toast('Sin mesa','Selecciona una mesa primero','⚠️'); return; }
   const e=getEntidad(mesaActual);
   if(!e.items.length){ toast('Sin platos','Añade algo al pedido primero','⚠️'); return; }
-  const payload={type:'order',dest,mesa:mesaActual,label:e.tipo==='cliente'?e.nombre:`Mesa ${e.id}`,
-    items:[...e.items],nota:$('#nota').value,total:e.total,time:new Date().toISOString()};
+  const payload={
+    type:'order', dest,
+    mesa:mesaActual,
+    label:e.tipo==='cliente'?e.nombre:`Mesa ${e.id}`,
+    items:e.items.map(x=>({...x})),
+    nota:$('#nota').value||'',
+    total:e.total,
+    time:new Date().toISOString()
+  };
   emit(payload);
   toast('Comanda enviada',`${payload.label} → ${dest}`,'✅');
 }
@@ -518,20 +525,18 @@ function connectWS(){
 
       // Orden nueva → cocina o barra
       if(msg.type==='order'){
-        const order = msg.order || msg;
+        const order = msg.order ? msg.order : msg;
         if(role==='kitchen' && order.dest==='cocina'){
           if(!window._comandasStation) window._comandasStation=[];
           window._comandasStation.unshift({...order, t:hora(), status:'pendiente'});
-          renderStation();
-          vibrar();
-          toast('Nueva comanda', `${order.label} — ${order.items?.length} plato${order.items?.length>1?'s':''}`, '🍳');
+          renderStation(); vibrar();
+          toast('Nueva comanda',`${order.label} — ${order.items?.length} plato${order.items?.length>1?'s':''}','🍳');
         }
         if(role==='bar' && order.dest==='barra'){
           if(!window._comandasStation) window._comandasStation=[];
           window._comandasStation.unshift({...order, t:hora(), status:'pendiente'});
-          renderStation();
-          vibrar();
-          toast('Nueva comanda', `${order.label} — ${order.items?.length} producto${order.items?.length>1?'s':''}`, '🍹');
+          renderStation(); vibrar();
+          toast('Nueva comanda',`${order.label} — ${order.items?.length} producto${order.items?.length>1?'s':''}','🍹');
         }
       }
 
