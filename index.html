@@ -210,16 +210,39 @@ const totE = e => e.items.reduce((s,x)=>s+x.p*x.q, 0);
 const send = p => { if(ws?.readyState===1) ws.send(JSON.stringify(p)); };
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
-document.getElementById('tb-name').textContent = MENU_DATA.restaurante.nombre;
-document.getElementById('tb-sub').textContent  = MENU_DATA.restaurante.subtitulo;
-document.title = MENU_DATA.restaurante.nombre;
-$('#role-tag').textContent = ROL==='waiter' ? 'Camarer@' : ROL;
+async function boot(){
+  // Intentar cargar menú del backend, sino usar embebido
+  let data = MENU_DATA;
+  if(WSU){
+    try{
+      const apiBase = WSU.replace('wss://','https://').replace('ws://','http://');
+      const r = await fetch(apiBase+'/menu');
+      if(r.ok) data = await r.json();
+    }catch(e){}
+  }
+  applyMenu(data);
+  $('#role-tag').textContent = ROL==='waiter' ? 'Camarer@' : ROL;
+  if(ROL==='waiter')       buildWaiter();
+  else if(ROL==='kitchen') buildStation('cocina','🍳 Cocina');
+  else if(ROL==='bar')     buildStation('barra','🍹 Barra');
+  else if(ROL==='cash')    buildCash();
+  connectWS();
+}
 
-if(ROL==='waiter')       buildWaiter();
-else if(ROL==='kitchen') buildStation('cocina','🍳 Cocina');
-else if(ROL==='bar')     buildStation('barra','🍹 Barra');
-else if(ROL==='cash')    buildCash();
-connectWS();
+function applyMenu(data){
+  Object.keys(MENU).forEach(k=>delete MENU[k]);
+  CATS.length = 0;
+  data.categorias.forEach(c=>{
+    CATS.push({id:c.id,label:c.label,cls:CMAP[c.id]||'c-ent',dest:c.dest||'cocina',nota:c.nota_cat||''});
+    MENU[c.id] = c.items;
+  });
+  catAct = CATS[0]?.id;
+  document.getElementById('tb-name').textContent = data.restaurante?.nombre || 'QuickOrder';
+  document.getElementById('tb-sub').textContent  = data.restaurante?.subtitulo || '';
+  document.title = data.restaurante?.nombre || 'QuickOrder';
+}
+
+boot();
 
 // ══════════════════════════════════════════════════════════════════════════════
 // CAMARERO
@@ -594,6 +617,11 @@ function connectWS(){
         addAviso(msg); vib();
         if(Notification?.permission==='granted')
           new Notification('Plato listo',{body:txt}).catch(()=>{});
+      }
+
+      if(msg.type==='menu-update' && msg.menu){
+        applyMenu(msg.menu);
+        if(ROL==='waiter' && mesaAct!=null){ renderCatBar(); renderMenuItems(); }
       }
     });
   }catch(e){ setLive(false); }
