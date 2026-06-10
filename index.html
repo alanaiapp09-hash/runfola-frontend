@@ -553,10 +553,11 @@ window.cajaCobrar = cajaCobrar;
 // ══════════════════════════════════════════════════════════════════════════════
 function connectWS(){
   if(!WSU){ setLive(false); return; }
+  if(ws && (ws.readyState===0||ws.readyState===1)){ return; }
   try{
     ws = new WebSocket(WSU+'?role='+ROL);
     ws.onopen  = () => setLive(true);
-    ws.onclose = () => { setLive(false); setTimeout(connectWS, 3000); };
+    ws.onclose = () => { ws=null; setLive(false); setTimeout(connectWS, 3000); };
     ws.onerror = () => setLive(false);
     ws.onmessage = ev => {
       let msg;
