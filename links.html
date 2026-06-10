@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>QuickOrder · Runfola</title>
+<meta name="theme-color" content="#0f0f0f">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  background:#0f0f0f;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100dvh}
+.wrap{width:100%;max-width:360px;padding:32px 20px}
+.logo{text-align:center;margin-bottom:40px}
+.logo-name{font-size:28px;font-weight:800}
+.logo-sub{font-size:13px;color:#888;margin-top:4px}
+.btn{display:flex;align-items:center;gap:16px;width:100%;padding:18px 20px;
+  border-radius:16px;border:none;cursor:pointer;margin-bottom:12px;text-decoration:none;
+  transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.btn-icon{font-size:28px;flex-shrink:0}
+.btn-text{text-align:left}
+.btn-label{font-size:17px;font-weight:800;display:block}
+.btn-desc{font-size:12px;opacity:.7;margin-top:2px;display:block}
+.b-waiter{background:#FF6B35;color:#fff}
+.b-kitchen{background:#1e0800;color:#FF6B35;border:2px solid #FF6B35}
+.b-bar{background:#001c28;color:#00CFFF;border:2px solid #00CFFF}
+.b-cash{background:#1a0028;color:#D946EF;border:2px solid #D946EF}
+.footer{text-align:center;font-size:11px;color:#444;margin-top:32px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-name">Runfola</div>
+    <div class="logo-sub">QuickOrder · Sistema de comandas</div>
+  </div>
+
+  <a class="btn b-waiter" id="l-waiter">
+    <span class="btn-icon">🧑‍🍽️</span>
+    <span class="btn-text">
+      <span class="btn-label">Camarero</span>
+      <span class="btn-desc">Tomar pedidos y gestionar mesas</span>
+    </span>
+  </a>
+
+  <a class="btn b-kitchen" id="l-kitchen">
+    <span class="btn-icon">🍳</span>
+    <span class="btn-text">
+      <span class="btn-label">Cocina</span>
+      <span class="btn-desc">Ver y gestionar comandas de cocina</span>
+    </span>
+  </a>
+
+  <a class="btn b-bar" id="l-bar">
+    <span class="btn-icon">🍹</span>
+    <span class="btn-text">
+      <span class="btn-label">Barra</span>
+      <span class="btn-desc">Ver y gestionar comandas de barra</span>
+    </span>
+  </a>
+
+  <a class="btn b-cash" id="l-cash">
+    <span class="btn-icon">🧾</span>
+    <span class="btn-text">
+      <span class="btn-label">Caja</span>
+      <span class="btn-desc">Recibir cuentas y cerrar mesas</span>
+    </span>
+  </a>
+
+  <div class="footer">runfolaorder.netlify.app</div>
+</div>
+<script>
+const BASE    = 'https://runfolaorder.netlify.app/';
+const BACKEND = 'wss://runfola-backend2.onrender.com';
+const roles   = {waiter:'camarero',kitchen:'cocina',bar:'barra',cash:'caja'};
+
+['waiter','kitchen','bar','cash'].forEach(role=>{
+  const el = document.getElementById('l-'+role);
+  el.href = `${BASE}?role=${role}&backend=${BACKEND}`;
+});
+</script>
+</body>
+</html>
