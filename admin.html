@@ -101,6 +101,47 @@ button,input,select{font:inherit;color:inherit}
       </div>
       <button class="f-btn f-add" onclick="addItem()">+ Añadir plato</button>
     </div>
+
+    <div class="form-card">
+      <h3>Crear nueva categoría</h3>
+      <div class="f-row">
+        <label class="f-label">Nombre de la categoría</label>
+        <input class="f-input" id="cat-name" placeholder="Ej: Sin gluten">
+      </div>
+      <div class="f-row">
+        <label class="f-label">Destino</label>
+        <select class="f-select" id="cat-dest">
+          <option value="cocina">Cocina</option>
+          <option value="barra">Barra</option>
+        </select>
+      </div>
+      <button class="f-btn f-add" onclick="addCat()">+ Crear categoría</button>
+    </div>
+
+    <div class="form-card" id="del-cat-card">
+      <h3>Eliminar categoría</h3>
+      <div class="f-row">
+        <label class="f-label">Categoría a eliminar (solo si está vacía)</label>
+        <select class="f-select" id="del-cat"></select>
+      </div>
+      <button class="f-btn" style="background:#ff5b5b;color:#fff" onclick="delCat()">🗑️ Eliminar categoría</button>
+    </div>
+
+    <div class="form-card">
+      <h3>Crear nueva categoría</h3>
+      <div class="f-row">
+        <label class="f-label">Nombre de la categoría</label>
+        <input class="f-input" id="cat-name" placeholder="Ej: Sin gluten">
+      </div>
+      <div class="f-row">
+        <label class="f-label">Destino</label>
+        <select class="f-select" id="cat-dest">
+          <option value="cocina">Cocina</option>
+          <option value="barra">Barra</option>
+        </select>
+      </div>
+      <button class="f-btn" onclick="addCat()" style="background:#D946EF;color:#fff">+ Crear categoría</button>
+    </div>
   </div>
 </div>
 
@@ -174,6 +215,37 @@ function esc(s){ return s.replace(/'/g,"\\'"); }
 
 function renderCatSelect(){
   $('#add-cat').innerHTML = menu.categorias.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  $('#del-cat').innerHTML = menu.categorias.map(c=>`<option value="${c.id}">${c.label} (${c.items.length} platos)</option>`).join('');
+}
+
+async function addCat(){
+  const label = $('#cat-name').value.trim();
+  const dest = $('#cat-dest').value;
+  if(!label){ toast('Escribe un nombre'); return; }
+  const id = label.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_');
+  try{
+    await fetch(API+'/menu/categorias', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id, label, dest})
+    });
+    $('#cat-name').value='';
+    toast('Categoría creada: '+label);
+    await loadMenu();
+  }catch(e){ toast('Error al crear categoría'); }
+}
+
+async function delCat(){
+  const catId = $('#del-cat').value;
+  const cat = menu.categorias.find(c=>c.id===catId);
+  if(!cat) return;
+  if(cat.items.length>0){ toast('Vacía la categoría antes de eliminarla'); return; }
+  if(!confirm('¿Eliminar la categoría "'+cat.label+'"?')) return;
+  try{
+    await fetch(API+'/menu/categorias/'+catId, {method:'DELETE'});
+    toast('Categoría eliminada: '+cat.label);
+    await loadMenu();
+  }catch(e){ toast('Error al eliminar'); }
 }
 
 async function addItem(){
@@ -229,6 +301,23 @@ async function delItem(id, name){
     toast('Eliminado: '+name);
     await loadMenu();
   }catch(e){ toast('Error al eliminar'); }
+}
+
+async function addCat(){
+  const label = $('#cat-name').value.trim();
+  const dest  = $('#cat-dest').value;
+  if(!label){ toast('Escribe el nombre de la categoría'); return; }
+  const id = label.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,20);
+  try{
+    await fetch(API+'/menu/categorias', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id, label, dest})
+    });
+    $('#cat-name').value='';
+    toast('Categoría creada: '+label);
+    await loadMenu();
+  }catch(e){ toast('Error al crear categoría'); }
 }
 
 function toast(msg){
