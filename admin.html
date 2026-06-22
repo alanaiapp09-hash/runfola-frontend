@@ -3,38 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>QuickOrder · Admin</title>
+<title>Runfola · Admin</title>
 <meta name="theme-color" content="#0f0f0f">
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
 html,body{height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:#0f0f0f;color:#fff;font-size:15px}
 button,input,select{font:inherit;color:inherit}
-
 #app{max-width:640px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
-
 .topbar{flex-shrink:0;background:#1a1a1a;border-bottom:1px solid #2a2a2a;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
 .tb-left{display:flex;align-items:center;gap:10px}
 .tb-back{background:none;border:none;cursor:pointer;color:#FF6B35;font-size:22px;text-decoration:none}
 .tb-title{font-size:17px;font-weight:800}
 .tb-badge{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:#FF6B35;color:#fff}
-
 #content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:40px}
-
-.section{padding:14px 16px 6px}
-.s-title{font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
-
-/* CATEGORIAS */
 .cat-tab-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid #2a2a2a}
 .cat-tab-bar::-webkit-scrollbar{display:none}
 .cat-tab{flex-shrink:0;padding:9px 16px;border-radius:999px;border:none;font-weight:800;font-size:13px;cursor:pointer;opacity:.4}
 .cat-tab.act{opacity:1}
 .c-beb{background:#00CFFF;color:#012028}
 .c-ent{background:#ADFF2F;color:#0d1800}
-.c-pri{background:#FF6B35;color:#1a0800}
+.c-ens{background:#ADFF2F;color:#0d1800}
+.c-pri{background:#FF6B35;color:#fff}
 .c-pos{background:#D946EF;color:#100018}
-
-/* PLATOS */
 .item-card{background:#1a1a1a;border:1.5px solid #2a2a2a;border-radius:14px;padding:14px;margin:6px 16px;display:flex;align-items:center;gap:12px}
 .item-info{flex:1;min-width:0}
 .item-name{font-size:15px;font-weight:700}
@@ -44,8 +35,6 @@ button,input,select{font:inherit;color:inherit}
 .ia-edit{background:#1e0800;color:#FF6B35;border:1.5px solid #FF6B35}
 .ia-del{background:#2d1f1f;color:#ff5b5b;border:1.5px solid #ff5b5b}
 .ia-btn:active{transform:scale(.9)}
-
-/* FORMS */
 .form-card{background:#1a1a1a;border:1.5px solid #2a2a2a;border-radius:14px;padding:16px;margin:10px 16px}
 .form-card h3{font-size:13px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
 .f-row{margin-bottom:10px}
@@ -59,14 +48,10 @@ button,input,select{font:inherit;color:inherit}
 .f-add{background:#FF6B35;color:#fff}
 .f-save{background:#41d36f;color:#0d1800}
 .f-cancel{background:#2a2a2a;color:#888;margin-top:6px}
-
-/* EDIT MODAL */
 #edit-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px}
 #edit-overlay.show{display:flex}
 .edit-card{background:#1a1a1a;border:2px solid #FF6B35;border-radius:16px;padding:20px;width:100%;max-width:360px}
 .edit-card h3{font-size:15px;font-weight:800;margin-bottom:16px;color:#FF6B35}
-
-/* TOAST */
 #toast{position:fixed;left:14px;right:14px;top:16px;z-index:9999;display:none;background:#FFD700;color:#1a1000;border-radius:14px;padding:12px 16px;font-weight:700;font-size:14px;text-align:center}
 #toast.show{display:block;animation:sd .2s ease-out}
 @keyframes sd{from{transform:translateY(-8px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -76,9 +61,10 @@ button,input,select{font:inherit;color:inherit}
 <div id="app">
   <div class="topbar">
     <div class="tb-left">
-      <a class="tb-back" href="./links.html">←</a>
+      <a class="tb-back" href="./index.html">←</a>
       <div class="tb-title">Admin · Menú</div>
     </div>
+    <button onclick="printPriceList()" style="padding:8px 14px;border-radius:10px;border:1.5px solid #FF6B35;background:transparent;color:#FF6B35;font-weight:800;font-size:13px;cursor:pointer">🖨️ Lista de precios</button>
     <div class="tb-badge">admin</div>
   </div>
   <div id="content">
@@ -89,7 +75,7 @@ button,input,select{font:inherit;color:inherit}
       <h3>Añadir plato</h3>
       <div class="f-row">
         <label class="f-label">Nombre</label>
-        <input class="f-input" id="add-name" placeholder="Ej: Lubina al horno">
+        <input class="f-input" id="add-name" placeholder="Ej: Carbonara">
       </div>
       <div class="f-row">
         <label class="f-label">Precio (€)</label>
@@ -106,7 +92,7 @@ button,input,select{font:inherit;color:inherit}
       <h3>Crear nueva categoría</h3>
       <div class="f-row">
         <label class="f-label">Nombre de la categoría</label>
-        <input class="f-input" id="cat-name" placeholder="Ej: Sin gluten">
+        <input class="f-input" id="cat-name" placeholder="Ej: Especiales">
       </div>
       <div class="f-row">
         <label class="f-label">Destino</label>
@@ -125,22 +111,6 @@ button,input,select{font:inherit;color:inherit}
         <select class="f-select" id="del-cat"></select>
       </div>
       <button class="f-btn" style="background:#ff5b5b;color:#fff" onclick="delCat()">🗑️ Eliminar categoría</button>
-    </div>
-
-    <div class="form-card">
-      <h3>Crear nueva categoría</h3>
-      <div class="f-row">
-        <label class="f-label">Nombre de la categoría</label>
-        <input class="f-input" id="cat-name" placeholder="Ej: Sin gluten">
-      </div>
-      <div class="f-row">
-        <label class="f-label">Destino</label>
-        <select class="f-select" id="cat-dest">
-          <option value="cocina">Cocina</option>
-          <option value="barra">Barra</option>
-        </select>
-      </div>
-      <button class="f-btn" onclick="addCat()" style="background:#D946EF;color:#fff">+ Crear categoría</button>
     </div>
   </div>
 </div>
@@ -166,34 +136,24 @@ button,input,select{font:inherit;color:inherit}
 
 <script>
 const API = 'https://runfola-backend2-production.up.railway.app';
-let menu = null;
-let catAct = null;
-
+let menu = null, catAct = null;
+const CMAP = {bebidas:'c-beb',pizzas:'c-pri',ensaladas:'c-ens',entrantes:'c-ent',postres:'c-pos'};
 const $ = s => document.querySelector(s);
-const CMAP = {bebidas:'c-beb',entrantes:'c-ent',compartir:'c-ent',ensaladas:'c-ent',
-  pizzas:'c-pri',pizzetas:'c-pri',principal:'c-pri',postres:'c-pos',pizzetas_dulce:'c-pos'};
 
 async function loadMenu(){
   try{
     const r = await fetch(API+'/menu');
     menu = await r.json();
     catAct = menu.categorias[0].id;
-    renderCatBar();
-    renderItems();
-    renderCatSelect();
-  }catch(e){
-    toast('Error cargando menú');
-  }
+    renderCatBar(); renderItems(); renderCatSelect();
+  }catch(e){ toast('Error cargando menú'); }
 }
-
 function renderCatBar(){
   $('#cat-bar').innerHTML = menu.categorias.map(c=>`
     <button class="cat-tab ${CMAP[c.id]||'c-ent'} ${catAct===c.id?'act':''}" onclick="selCat('${c.id}')">${c.label} (${c.items.length})</button>
   `).join('');
 }
-
 function selCat(id){ catAct=id; renderCatBar(); renderItems(); }
-
 function renderItems(){
   const cat = menu.categorias.find(c=>c.id===catAct);
   if(!cat){ $('#items-list').innerHTML=''; return; }
@@ -207,126 +167,102 @@ function renderItems(){
         <button class="ia-btn ia-edit" onclick="openEdit('${it.id}','${esc(it.n)}',${it.p})">✏️</button>
         <button class="ia-btn ia-del" onclick="delItem('${it.id}','${esc(it.n)}')">🗑️</button>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-
 function esc(s){ return s.replace(/'/g,"\\'"); }
-
 function renderCatSelect(){
   $('#add-cat').innerHTML = menu.categorias.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
   $('#del-cat').innerHTML = menu.categorias.map(c=>`<option value="${c.id}">${c.label} (${c.items.length} platos)</option>`).join('');
 }
-
 async function addCat(){
-  const label = $('#cat-name').value.trim();
-  const dest = $('#cat-dest').value;
+  const label=$('#cat-name').value.trim(),dest=$('#cat-dest').value;
   if(!label){ toast('Escribe un nombre'); return; }
-  const id = label.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_');
+  const id=label.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_');
   try{
-    await fetch(API+'/menu/categorias', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({id, label, dest})
-    });
-    $('#cat-name').value='';
-    toast('Categoría creada: '+label);
-    await loadMenu();
+    await fetch(API+'/menu/categorias',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,label,dest})});
+    $('#cat-name').value=''; toast('Categoría creada: '+label); await loadMenu();
   }catch(e){ toast('Error al crear categoría'); }
 }
-
 async function delCat(){
-  const catId = $('#del-cat').value;
-  const cat = menu.categorias.find(c=>c.id===catId);
-  if(!cat) return;
+  const catId=$('#del-cat').value,cat=menu.categorias.find(c=>c.id===catId);
+  if(!cat)return;
   if(cat.items.length>0){ toast('Vacía la categoría antes de eliminarla'); return; }
-  if(!confirm('¿Eliminar la categoría "'+cat.label+'"?')) return;
+  if(!confirm('¿Eliminar la categoría "'+cat.label+'"?'))return;
   try{
-    await fetch(API+'/menu/categorias/'+catId, {method:'DELETE'});
-    toast('Categoría eliminada: '+cat.label);
-    await loadMenu();
+    await fetch(API+'/menu/categorias/'+catId,{method:'DELETE'});
+    toast('Categoría eliminada: '+cat.label); await loadMenu();
   }catch(e){ toast('Error al eliminar'); }
 }
-
 async function addItem(){
-  const n = $('#add-name').value.trim();
-  const p = parseFloat($('#add-price').value);
-  const catId = $('#add-cat').value;
-  if(!n || isNaN(p) || p<=0){ toast('Completa nombre y precio'); return; }
+  const n=$('#add-name').value.trim(),p=parseFloat($('#add-price').value),catId=$('#add-cat').value;
+  if(!n||isNaN(p)||p<=0){ toast('Completa nombre y precio'); return; }
   try{
-    await fetch(API+'/menu/'+catId+'/items', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({n, p})
-    });
-    $('#add-name').value='';
-    $('#add-price').value='';
-    toast('Plato añadido: '+n);
-    await loadMenu();
+    await fetch(API+'/menu/'+catId+'/items',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({n,p})});
+    $('#add-name').value='';$('#add-price').value='';
+    toast('Plato añadido: '+n); await loadMenu();
   }catch(e){ toast('Error al añadir'); }
 }
-
-function openEdit(id, name, price){
-  $('#edit-id').value = id;
-  $('#edit-name').value = name;
-  $('#edit-price').value = price;
+function openEdit(id,name,price){
+  $('#edit-id').value=id;$('#edit-name').value=name;$('#edit-price').value=price;
   $('#edit-overlay').classList.add('show');
 }
-
-function closeEdit(){
-  $('#edit-overlay').classList.remove('show');
-}
-
+function closeEdit(){ $('#edit-overlay').classList.remove('show'); }
 async function saveEdit(){
-  const id = $('#edit-id').value;
-  const n  = $('#edit-name').value.trim();
-  const p  = parseFloat($('#edit-price').value);
-  if(!n || isNaN(p) || p<=0){ toast('Completa nombre y precio'); return; }
+  const id=$('#edit-id').value,n=$('#edit-name').value.trim(),p=parseFloat($('#edit-price').value);
+  if(!n||isNaN(p)||p<=0){ toast('Completa nombre y precio'); return; }
   try{
-    await fetch(API+'/menu/items/'+id, {
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({n, p})
-    });
-    closeEdit();
-    toast('Plato actualizado');
-    await loadMenu();
+    await fetch(API+'/menu/items/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({n,p})});
+    closeEdit(); toast('Plato actualizado'); await loadMenu();
   }catch(e){ toast('Error al editar'); }
 }
-
-async function delItem(id, name){
-  if(!confirm('¿Eliminar "'+name+'" del menú?')) return;
+async function delItem(id,name){
+  if(!confirm('¿Eliminar "'+name+'" del menú?'))return;
   try{
-    await fetch(API+'/menu/items/'+id, {method:'DELETE'});
-    toast('Eliminado: '+name);
-    await loadMenu();
+    await fetch(API+'/menu/items/'+id,{method:'DELETE'});
+    toast('Eliminado: '+name); await loadMenu();
   }catch(e){ toast('Error al eliminar'); }
 }
-
-async function addCat(){
-  const label = $('#cat-name').value.trim();
-  const dest  = $('#cat-dest').value;
-  if(!label){ toast('Escribe el nombre de la categoría'); return; }
-  const id = label.toLowerCase().replace(/[^a-z0-9]/g,'_').slice(0,20);
-  try{
-    await fetch(API+'/menu/categorias', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({id, label, dest})
-    });
-    $('#cat-name').value='';
-    toast('Categoría creada: '+label);
-    await loadMenu();
-  }catch(e){ toast('Error al crear categoría'); }
-}
-
 function toast(msg){
-  const el=$('#toast');
-  el.textContent=msg;
-  el.classList.add('show');
+  const el=$('#toast');el.textContent=msg;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),3000);
 }
-
+function printPriceList(){
+  if(!menu){ toast('Cargando menú...'); return; }
+  const fecha=new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const sections=menu.categorias.map(cat=>`
+    <div class="cat-section">
+      <h2>${cat.label}</h2>
+      <table><tbody>
+        ${cat.items.map(it=>`<tr><td>${it.n}</td><td>${Number(it.p).toFixed(2)} €</td></tr>`).join('')}
+      </tbody></table>
+    </div>`).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Lista de Precios · Runfola</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,sans-serif;padding:24px;max-width:720px;margin:0 auto;color:#222}
+    h1{text-align:center;font-size:22px;margin-bottom:4px}
+    .sub{text-align:center;color:#888;font-size:12px;margin-bottom:6px}
+    .fecha{text-align:center;color:#aaa;font-size:11px;margin-bottom:24px}
+    .cat-section{margin-bottom:18px;page-break-inside:avoid}
+    h2{font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:.06em;color:#FF6B35;border-bottom:2px solid #FF6B35;padding-bottom:3px;margin-bottom:6px}
+    table{width:100%;border-collapse:collapse}
+    tr:nth-child(even){background:#f7f7f7}
+    td{padding:4px 8px;font-size:13px}
+    td:last-child{text-align:right;font-weight:bold;white-space:nowrap;width:70px}
+    .footer{text-align:center;font-size:11px;color:#aaa;margin-top:24px;border-top:1px solid #eee;padding-top:10px}
+    @media print{body{padding:12px}.cat-section{page-break-inside:avoid}}
+  </style></head><body>
+  <h1>Runfola</h1>
+  <div class="sub">coffee · pizzería · bar · Lista de precios · IVA incluido</div>
+  <div class="fecha">${fecha}</div>
+  ${sections}
+  <div class="footer">runfolapizzas.com</div>
+  </body></html>`;
+  const win=window.open('','_blank','width=820,height=700');
+  if(!win){ toast('Permite ventanas emergentes'); return; }
+  win.document.write(html); win.document.close();
+  setTimeout(()=>{win.print();},400);
+}
 loadMenu();
 </script>
 </body>
