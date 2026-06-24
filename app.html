@@ -150,7 +150,7 @@ const CMAP={bebidas:'c-beb',pizzas:'c-pri',ensaladas:'c-ens',entrantes:'c-ent',p
 let CATS=[],MENU={};
 let mesas=Array.from({length:10},(_,i)=>({id:i+1,tipo:'mesa',estado:'libre',items:[],total:0,orderSeq:0}));
 let clientes=[],cliSeq=1,mesaAct=null,catAct=null,ws=null,tTimer=null;
-let staCmds=[],cajaCmds=[];
+let staCmds=[],cajaCmds=[];let cajaReady=false;
 let splitSrcMesaId=null,splitN=0,splitSubIdx=0,splitSubItems=[],splitAssigned={},splitLastBill=null;
 let cajaOrders={};
 const $=s=>document.querySelector(s);
@@ -385,7 +385,7 @@ function renderCash(){
     <button style="width:100%;margin-top:6px;padding:10px;border-radius:12px;border:1.5px solid #ADFF2F;background:transparent;color:#ADFF2F;font-weight:800;font-size:12px;cursor:pointer" onclick="emailTicket(cajaCmds[${i}])">📧 Enviar factura por email</button>
     <button class="xcls" onclick="cajaCobrar(${i})">✓ Cobrado — cerrar mesa</button>
   </div>`).join('');}
-function cajaCobrar(i){const c=cajaCmds[i];if(!confirm('¿Seguro cerrar '+c.label+'?'))return;delete cajaOrders[String(c.mesa)];renderControl();emit({type:'close',mesa:c.mesa,clientes:[]});cajaCmds.splice(i,1);renderCash();toast('Cerrada',c.label+' cobrada','✅');}
+function cajaCobrar(i){const c=cajaCmds[i];if(!confirm('¿Seguro cerrar '+c.label+'?'))return;emit({type:'close',mesa:c.mesa,clientes:[]});cajaCmds.splice(i,1);renderCash();toast('Cerrada',c.label+' cobrada','✅');}
 window.cajaCobrar=cajaCobrar;
 
 let _printBusy=false;
@@ -451,11 +451,11 @@ window.emailTicket=emailTicket;
 // ══ WS ════════════════════════════════════════════════════════════════════════
 function connectWS(){if(!WSU){setLive(false);return;}if(ws&&(ws.readyState===0||ws.readyState===1))return;
 try{ws=new WebSocket(WSU+'?role='+ROL);
-ws.onopen=()=>setLive(true);ws.onclose=()=>{ws=null;setLive(false);setTimeout(connectWS,3000)};ws.onerror=()=>{ws=null;setLive(false)};
+ws.onopen=()=>{setLive(true);if(ROL==='cash'){cajaReady=false;setTimeout(()=>{cajaReady=true;},5000);}};ws.onclose=()=>{ws=null;setLive(false);cajaReady=false;setTimeout(connectWS,3000)};ws.onerror=()=>{ws=null;setLive(false);cajaReady=false;};
 ws.addEventListener('message',ev=>{let msg;try{msg=JSON.parse(ev.data)}catch{return}
 if(msg.type==='sync'){if(Array.isArray(msg.mesas))mesas=msg.mesas;if(Array.isArray(msg.clientes))clientes=msg.clientes;if(ROL==='waiter')renderMesas();}
 if(msg.type==='order'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){staCmds.unshift({...msg,t:hhmm(),st:'pend'});renderStation();vib();toast('Nueva comanda',msg.label,'🍳');}}
-if((msg.type==='order-copy')&&ROL==='cash'){addCajaOrder(msg);fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});}
+if((msg.type==='order-copy')&&ROL==='cash'){addCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});}
 if(msg.type==='bill'&&ROL==='cash'){cajaCmds.unshift({...msg,t:hhmm()});renderCash();vib();toast('Cuenta',msg.label,'🧾');}
 if(msg.type==='notify'&&msg.action==='ready'&&ROL==='waiter'){const txt=msg.label+': '+msg.item+' listo';toast('Plato listo',txt,'🍽️');addAviso(msg);vib();if(Notification?.permission==='granted')new Notification('Plato listo',{body:txt}).catch(()=>{});}
 if(msg.type==='menu-update'&&msg.menu){applyMenu(msg.menu);if(ROL==='waiter'&&mesaAct!=null){renderCatBar();renderMenuItems();}}
