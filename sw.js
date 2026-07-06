@@ -1,4 +1,4 @@
-const CACHE = 'runfola-v2';
+const CACHE = 'runfola-v3';
 const ASSETS = [
   './index.html',
   './app.html',
