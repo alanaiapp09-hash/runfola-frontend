@@ -91,6 +91,7 @@ button,input,textarea{font:inherit;color:inherit}
 /* COMANDAS */
 .cmd-card{background:#1a1a1a;border:2px solid #2a2a2a;border-radius:16px;padding:14px;margin:8px 14px}
 .cmd-card.new{border-color:#FF6B35;animation:glow 2s infinite}
+.cmd-card.cancel{border-color:#ff5b5b;background:#2a0808}
 @keyframes glow{0%,100%{border-color:#FF6B35}50%{border-color:#ff9a35}}
 .cmd-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .cmd-lbl{font-size:17px;font-weight:800}
@@ -268,7 +269,7 @@ function quitarMesa(){if(mesas.length<=1)return;const u=mesas[mesas.length-1];if
 window.agregarMesa=agregarMesa;window.quitarMesa=quitarMesa;
 function renderCatBar(){const el=$('#ctabs');if(!el)return;el.innerHTML=CATS.map(c=>`<button class="ct ${c.cls} ${catAct===c.id?'on':''}" onclick="selCat('${c.id}')">${c.label}</button>`).join('');}
 function selCat(id){catAct=id;renderCatBar();renderMenuItems();}
-function renderMenuItems(){const el=$('#mlist');if(!el)return;const e=mesaAct!=null?getE(mesaAct):null;const sent=e?e.items.filter(x=>x.qSent>0):[];let h='';if(sent.length){const total=sent.reduce((s,x)=>s+x.p*x.qSent,0);h+=`<div class="xcard" style="border-color:#41d36f"><div class="xh">✓ Pedido actual</div>${sent.map(x=>`<div class="xl"><span>${x.qSent} × ${x.n}</span><span style="color:#FFD700">${eur(x.p*x.qSent)}</span></div>`).join('')}<div class="xtot"><span>Total enviado</span><span>${eur(total)}</span></div></div>`;}if(catAct){const cat=CATS.find(c=>c.id===catAct);h+=cat?.nota?`<div style="padding:10px 16px;font-size:12px;color:#FFD700;font-weight:700">${cat.nota}</div>`:'';h+=(MENU[catAct]||[]).map(it=>{const item=e?.items.find(x=>x.id===it.id);const q=item?.q||0;const qSent=item?.qSent||0;const qNew=Math.max(0,q-qSent);return `<div class="mrow"><div class="mi"><div class="mn">${it.n}</div><div class="mp">${eur(it.p)}</div></div><div class="qc"><button class="qb qm" onclick="chg('${it.id}',-1)">−</button><div style="text-align:center"><div class="qn${qNew>0?' hasq':''}" id="qi-${it.id}">${q||''}</div>${qSent>0?`<div style="font-size:9px;color:#41d36f;margin-top:1px">✓${qSent}</div>`:''}</div><button class="qb qp" onclick="chg('${it.id}',1)">+</button></div></div>`;}).join('');}el.innerHTML=h;}
+function renderMenuItems(){const el=$('#mlist');if(!el)return;const e=mesaAct!=null?getE(mesaAct):null;const sent=e?e.items.filter(x=>x.qSent>0):[];let h='';if(sent.length){const total=sent.reduce((s,x)=>s+x.p*x.qSent,0);h+=`<div class="xcard" style="border-color:#41d36f"><div class="xh">✓ Pedido actual</div>${sent.map(x=>`<div class="xl"><span>${x.qSent} × ${x.n}</span><span style="display:flex;align-items:center;gap:8px"><span style="color:#FFD700">${eur(x.p*x.qSent)}</span><button onclick="anularItem('${x.id}')" style="width:24px;height:24px;border-radius:50%;border:none;background:#ff5b5b;color:#fff;font-size:14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button></span></div>`).join('')}<div class="xtot"><span>Total enviado</span><span>${eur(total)}</span></div></div>`;}if(catAct){const cat=CATS.find(c=>c.id===catAct);h+=cat?.nota?`<div style="padding:10px 16px;font-size:12px;color:#FFD700;font-weight:700">${cat.nota}</div>`:'';h+=(MENU[catAct]||[]).map(it=>{const item=e?.items.find(x=>x.id===it.id);const q=item?.q||0;const qSent=item?.qSent||0;const qNew=Math.max(0,q-qSent);return `<div class="mrow"><div class="mi"><div class="mn">${it.n}</div><div class="mp">${eur(it.p)}</div></div><div class="qc"><button class="qb qm" onclick="chg('${it.id}',-1)">−</button><div style="text-align:center"><div class="qn${qNew>0?' hasq':''}" id="qi-${it.id}">${q||''}</div>${qSent>0?`<div style="font-size:9px;color:#41d36f;margin-top:1px">✓${qSent}</div>`:''}</div><button class="qb qp" onclick="chg('${it.id}',1)">+</button></div></div>`;}).join('');}el.innerHTML=h;}
 function chg(id,d){if(mesaAct===null)return;const e=getE(mesaAct);const prod=(MENU[catAct]||[]).find(x=>x.id===id);if(!prod)return;let it=e.items.find(x=>x.id===id);if(!it&&d>0)e.items.push({id,n:prod.n,p:prod.p,q:1,cat:catAct,dest:CATS.find(c=>c.id===catAct).dest,qSent:0});else if(it){it.q+=d;if(it.q<=0)e.items=e.items.filter(x=>x.id!==id);else if((it.qSent||0)>it.q)it.qSent=it.q;}e.estado='ocupada';e.total=totE(e);const el=document.getElementById('qi-'+id);if(el){const itm=e.items.find(x=>x.id===id);const q=itm?.q||0;const qNew=Math.max(0,q-(itm?.qSent||0));el.textContent=q||'';el.className='qn'+(qNew>0?' hasq':'');}$('#ptot').textContent=eur(totE(e));emit({type:'sync',mesas,clientes});renderMesas();}
 window.chg=chg;
 function enviarAuto(){
@@ -301,6 +302,28 @@ function enviarAuto(){
   toast('✅ '+orderNum,label+' → '+destinos.join(', '),'📤');
 }
 window.enviarAuto=enviarAuto;
+function anularItem(id){
+  if(mesaAct===null)return;
+  const e=getE(mesaAct);
+  const it=e.items.find(x=>x.id===id);
+  if(!it||!it.qSent)return;
+  const cantidad=it.qSent;
+  if(!confirm(`¿Anular ${cantidad}× ${it.n}?`))return;
+  if(!e.orderSeq)e.orderSeq=0;
+  e.orderSeq++;
+  const mesaKey=e.tipo==='cliente'?e.nombre.slice(0,3).toUpperCase():'M'+e.id;
+  const orderNum=mesaKey+'-A'+e.orderSeq;
+  const label=e.tipo==='cliente'?e.nombre:'Mesa '+e.id;
+  emit({type:'cancel',mesa:mesaAct,label,dest:it.dest,orderNum,items:[{n:it.n,q:cantidad}],camarero:'',time:new Date().toISOString()});
+  it.qSent-=cantidad;
+  it.q-=cantidad;
+  if(it.q<=0)e.items=e.items.filter(x=>x.id!==id);
+  e.total=totE(e);
+  $('#ptot').textContent=eur(totE(e));
+  renderMenuItems();
+  emit({type:'sync',mesas,clientes});
+}
+window.anularItem=anularItem;
 function pedirCuenta(){if(mesaAct===null)return;const e=getE(mesaAct);if(!e.items.length){toast('Sin platos','','⚠️');return;}showBillModal(e);}
 function cerrarMesa(){if(mesaAct===null)return;const e=getE(mesaAct);if(!confirm('¿Seguro cerrar '+(e.tipo==='cliente'?e.nombre:'Mesa '+e.id)+'?'))return;e.items=[];e.total=0;e.estado='libre';if(e.tipo==='cliente')clientes=clientes.filter(c=>c.id!==mesaAct);$('#nota').value='';emit({type:'close',mesa:mesaAct,clientes});mesaAct=null;renderMesas();goMesas();}
 function addAviso(msg){const el=$('#alist');if(!el)return;const nb=$('#nb-a');if(nb)nb.style.color='#FF6B35';const empty=el.querySelector('[style*="40px"]');if(empty)el.innerHTML='';const d=document.createElement('div');d.className='cmd-card new';d.innerHTML=`<div class="cmd-top"><div class="cmd-lbl">🍽️ ${msg.label}</div><div class="cmd-time">${hhmm()}</div></div><div style="font-size:15px;color:#ADFF2F;font-weight:700;padding:4px 0">${msg.item} — listo para llevar</div>`;el.prepend(d);}
@@ -308,7 +331,7 @@ function addAviso(msg){const el=$('#alist');if(!el)return;const nb=$('#nb-a');if
 // ══ ESTACIÓN ══════════════════════════════════════════════════════════════════
 function buildStation(destF,titulo){staCmds=[];$('#main').innerHTML=`<div class="slabel">${titulo}<span id="stb" style="color:#FF6B35"></span></div><div id="stl"><div style="padding:40px 20px;text-align:center;color:#555">Esperando comandas…</div></div>`;$('#botnav').innerHTML='';}
 function renderStation(){const el=$('#stl'),badge=$('#stb');if(!el)return;const pend=staCmds.filter(c=>c.st==='pend').length;if(badge)badge.textContent=pend?` · ${pend} pendiente${pend>1?'s':''}` :'';if(!staCmds.length){el.innerHTML='<div style="padding:40px 20px;text-align:center;color:#555">Sin comandas</div>';return;}
-el.innerHTML=staCmds.map((c,i)=>`<div class="cmd-card ${c.st==='pend'?'new':''}"><div class="cmd-top"><div><div class="cmd-lbl">${c.label}${c.orderNum?' · <span style="background:#FFD700;color:#111;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:800">'+c.orderNum+'</span>':''}</div>${c.camarero?`<div class="cmd-cam">👤 ${c.camarero}</div>`:''}</div><div class="cmd-meta"><span class="cmd-time">${c.t}</span><span class="cmd-dest d-${c.dest}">${c.dest}</span></div></div><div class="cmd-items">${c.items.map(x=>`<div class="cmd-item">${x.q}× ${x.n}</div>`).join('')}${c.nota?`<div class="cmd-nota">⚠️ ${c.nota}</div>`:''}</div><div class="cmd-acts">${c.st==='pend'?`<button class="ca ca-ok" onclick="staListo(${i})">✓ Listo — avisar camarer@</button>`:`<button class="ca ca-done" disabled>Entregado</button>`}</div></div>`).join('');}
+el.innerHTML=staCmds.map((c,i)=>c.cancel?`<div class="cmd-card cancel"><div class="cmd-top"><div><div class="cmd-lbl" style="color:#ff5b5b">✕ ❌ ANULADO${c.orderNum?' · <span style="background:#ff5b5b;color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:800">'+c.orderNum+'</span>':''}</div><div class="cmd-cam" style="color:#ff5b5b">${c.label} · mesa ${c.mesa}</div></div><div class="cmd-meta"><span class="cmd-time">${c.t}</span><span class="cmd-dest d-${c.dest}">${c.dest}</span></div></div><div class="cmd-items">${c.items.map(x=>`<div class="cmd-item" style="color:#ff8a8a;text-decoration:line-through">${x.q}× ${x.n}</div>`).join('')}</div></div>`:`<div class="cmd-card ${c.st==='pend'?'new':''}"><div class="cmd-top"><div><div class="cmd-lbl">${c.label}${c.orderNum?' · <span style="background:#FFD700;color:#111;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:800">'+c.orderNum+'</span>':''}</div>${c.camarero?`<div class="cmd-cam">👤 ${c.camarero}</div>`:''}</div><div class="cmd-meta"><span class="cmd-time">${c.t}</span><span class="cmd-dest d-${c.dest}">${c.dest}</span></div></div><div class="cmd-items">${c.items.map(x=>`<div class="cmd-item">${x.q}× ${x.n}</div>`).join('')}${c.nota?`<div class="cmd-nota">⚠️ ${c.nota}</div>`:''}</div><div class="cmd-acts">${c.st==='pend'?`<button class="ca ca-ok" onclick="staListo(${i})">✓ Listo — avisar camarer@</button>`:`<button class="ca ca-done" disabled>Entregado</button>`}</div></div>`).join('');}
 function staListo(i){const c=staCmds[i];if(!c)return;c.st='done';emit({type:'ready',action:'ready',mesa:c.mesa,label:c.label,item:c.items[0]?.n||''});renderStation();}
 window.staListo=staListo;
 
@@ -337,6 +360,18 @@ function addCajaOrder(msg){
     else cajaOrders[key].items.push({...it});
   });
   cajaOrders[key].total=cajaOrders[key].items.reduce((s,x)=>s+(x.p||0)*(x.q||1),0);
+  renderControl();
+}
+function subCajaOrder(msg){
+  const key=String(msg.mesa);
+  const o=cajaOrders[key];if(!o)return;
+  (msg.items||[]).forEach(it=>{
+    const idx=o.items.findIndex(x=>(it.id&&x.id===it.id)||x.n===it.n);
+    if(idx===-1)return;
+    o.items[idx].q-=(it.q||1);
+    if(o.items[idx].q<=0)o.items.splice(idx,1);
+  });
+  o.total=o.items.reduce((s,x)=>s+(x.p||0)*(x.q||1),0);
   renderControl();
 }
 function resetControl(){if(!confirm('¿Limpiar control de mesas?'))return;cajaOrders={};renderControl();}
@@ -428,13 +463,36 @@ ${items.map(x=>'<tr style="border-bottom:1px solid #eee"><td style="padding:4px 
 window.emailTicket=emailTicket;
 
 // ══ WS ════════════════════════════════════════════════════════════════════════
+function mergeSyncEntity(local,remote){
+  if(!local)return remote;
+  const merged={...remote,orderSeq:local.orderSeq||0};
+  merged.items=(remote.items||[]).map(ri=>{
+    const li=local.items.find(x=>x.id===ri.id);
+    return li?{...ri,qSent:li.qSent||0}:ri;
+  });
+  return merged;
+}
+function mergeSyncList(localList,remoteList){
+  return remoteList.map(re=>mergeSyncEntity(localList.find(le=>le.id===re.id),re));
+}
 function connectWS(){if(!WSU){setLive(false);return;}if(ws&&(ws.readyState===0||ws.readyState===1))return;
 try{ws=new WebSocket(WSU+'?role='+ROL);
 ws.onopen=()=>{setLive(true);if(ROL==='cash'){cajaReady=false;setTimeout(()=>{cajaReady=true;},5000);}};ws.onclose=()=>{ws=null;setLive(false);cajaReady=false;setTimeout(connectWS,3000)};ws.onerror=()=>{ws=null;setLive(false);cajaReady=false;};
 ws.addEventListener('message',ev=>{let msg;try{msg=JSON.parse(ev.data)}catch{return}
-if(msg.type==='sync'){if(Array.isArray(msg.mesas))mesas=msg.mesas;if(Array.isArray(msg.clientes))clientes=msg.clientes;if(ROL==='waiter')renderMesas();}
+if(msg.type==='sync'){
+  if(ROL==='waiter'){
+    if(Array.isArray(msg.mesas))mesas=mergeSyncList(mesas,msg.mesas);
+    if(Array.isArray(msg.clientes))clientes=mergeSyncList(clientes,msg.clientes);
+    renderMesas();
+  }else{
+    if(Array.isArray(msg.mesas))mesas=msg.mesas;
+    if(Array.isArray(msg.clientes))clientes=msg.clientes;
+  }
+}
 if(msg.type==='order'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){staCmds.unshift({...msg,t:hhmm(),st:'pend'});renderStation();vib();toast('Nueva comanda',msg.label,'🍳');}}
+if(msg.type==='cancel'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){staCmds.unshift({...msg,t:hhmm(),st:'cancel',cancel:true});renderStation();vib();toast('❌ Anulado',msg.label,'❌');}}
 if((msg.type==='order-copy')&&ROL==='cash'){addCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});}
+if((msg.type==='cancel-copy')&&ROL==='cash'){subCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});}
 if(msg.type==='bill'&&ROL==='cash'){cajaCmds.unshift({...msg,t:hhmm()});renderCash();vib();toast('Cuenta',msg.label,'🧾');}
 if(msg.type==='notify'&&msg.action==='ready'&&ROL==='waiter'){const txt=msg.label+': '+msg.item+' listo';toast('Plato listo',txt,'🍽️');addAviso(msg);vib();if(Notification?.permission==='granted')new Notification('Plato listo',{body:txt}).catch(()=>{});}
 if(msg.type==='menu-update'&&msg.menu){applyMenu(msg.menu);if(ROL==='waiter'&&mesaAct!=null){renderCatBar();renderMenuItems();}}
