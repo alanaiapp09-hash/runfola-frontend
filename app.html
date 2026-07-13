@@ -307,21 +307,27 @@ function anularItem(id){
   const e=getE(mesaAct);
   const it=e.items.find(x=>x.id===id);
   if(!it||!it.qSent)return;
-  const cantidad=it.qSent;
-  if(!confirm(`¿Anular ${cantidad}× ${it.n}?`))return;
+  let n=1;
+  if(it.qSent>1){
+    const r=prompt(`¿Cuántas ${it.n} anular? (1-${it.qSent})`,String(it.qSent));
+    if(r===null)return;
+    n=parseInt(r,10);
+    if(!Number.isInteger(n)||n<1||n>it.qSent)return;
+  }
   if(!e.orderSeq)e.orderSeq=0;
   e.orderSeq++;
   const mesaKey=e.tipo==='cliente'?e.nombre.slice(0,3).toUpperCase():'M'+e.id;
   const orderNum=mesaKey+'-A'+e.orderSeq;
   const label=e.tipo==='cliente'?e.nombre:'Mesa '+e.id;
-  emit({type:'cancel',mesa:mesaAct,label,dest:it.dest,orderNum,items:[{n:it.n,q:cantidad}],camarero:'',time:new Date().toISOString()});
-  it.qSent-=cantidad;
-  it.q-=cantidad;
+  emit({type:'cancel',mesa:mesaAct,label,dest:it.dest,orderNum,items:[{n:it.n,q:n}],camarero:'',time:new Date().toISOString()});
+  it.qSent-=n;
+  it.q-=n;
   if(it.q<=0)e.items=e.items.filter(x=>x.id!==id);
   e.total=totE(e);
   $('#ptot').textContent=eur(totE(e));
   renderMenuItems();
   emit({type:'sync',mesas,clientes});
+  toast('Anulado: '+n+' × '+it.n,'','❌');
 }
 window.anularItem=anularItem;
 function pedirCuenta(){if(mesaAct===null)return;const e=getE(mesaAct);if(!e.items.length){toast('Sin platos','','⚠️');return;}showBillModal(e);}
