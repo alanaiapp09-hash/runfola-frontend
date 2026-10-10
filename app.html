@@ -408,7 +408,6 @@ function renderCash(){
       <button style="flex:1;padding:10px;border-radius:12px;border:1.5px solid #00CFFF;background:transparent;color:#00CFFF;font-weight:800;font-size:12px;cursor:pointer" onclick="printTicket(cajaCmds[${i}],false)">🖨️ Ticket</button>
       <button style="flex:1;padding:10px;border-radius:12px;border:1.5px solid #888;background:transparent;color:#888;font-weight:800;font-size:12px;cursor:pointer" onclick="printTicket(cajaCmds[${i}],true)">📋 Copia</button>
     </div>
-    <button style="width:100%;margin-top:6px;padding:10px;border-radius:12px;border:1.5px solid #ADFF2F;background:transparent;color:#ADFF2F;font-weight:800;font-size:12px;cursor:pointer" onclick="emailTicket(cajaCmds[${i}])">📧 Enviar factura por email</button>
     <button class="xcls" onclick="cajaCobrar(${i})">✓ Cobrado — cerrar mesa</button>
   </div>`).join('');}
 function cajaCobrar(i){const c=cajaCmds[i];if(!confirm('¿Seguro cerrar '+c.label+'?'))return;emit({type:'close',mesa:c.mesa,clientes:[]});cajaCmds.splice(i,1);renderCash();toast('Cerrada',c.label+' cobrada','✅');}
@@ -428,48 +427,6 @@ async function printTicket(data,isCopy){
   }catch(e){toast('Sin impresora','Inicia el servidor de impresión','⚠️');}
 }
 window.printTicket=printTicket;
-
-async function emailTicket(data){
-  const to=prompt('Email del cliente:');
-  if(!to||!to.includes('@'))return;
-  const items=data.items||[];
-  const total=data.total||0;
-  const fecha=new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const hora=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-  let ticketId='';
-  try{const apiBase=WSU.replace('wss://','https://').replace('ws://','http://');const r=await fetch(apiBase+'/ticket-number',{method:'POST'});if(r.ok){const d=await r.json();ticketId=d.id;}}catch(e){}
-  if(!ticketId)ticketId=new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9999)).padStart(4,'0');
-  const ticketHtml=`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px;color:#333">
-<div style="text-align:center;margin-bottom:16px">
-<div style="font-size:20px;font-weight:bold">RUNFOLA PIZZAS</div>
-<div style="font-size:12px;color:#666">coffee · pizzería · bar</div>
-</div>
-<hr style="border:1px dashed #ccc">
-<div style="text-align:center;font-weight:bold;margin:10px 0">FACTURA SIMPLIFICADA</div>
-<div style="text-align:center;font-size:12px;color:#666">Nº ${ticketId}</div>
-<hr style="border:1px dashed #ccc">
-<div style="display:flex;justify-content:space-between;font-size:12px;margin:8px 0"><span>Fecha: ${fecha}</span><span>Hora: ${hora}</span></div>
-<div style="font-weight:bold;margin-bottom:4px">${data.label||''}</div>
-<hr style="border:1px dashed #ccc">
-<table style="width:100%;font-size:13px;border-collapse:collapse;margin:8px 0">
-<tr style="border-bottom:1px solid #eee;font-weight:bold"><td>Producto</td><td style="text-align:center;width:30px">Ud</td><td style="text-align:right;width:60px">Importe</td></tr>
-${items.map(x=>'<tr style="border-bottom:1px solid #eee"><td style="padding:4px 0">'+x.n+'</td><td style="text-align:center">'+x.q+'</td><td style="text-align:right">'+(x.p*x.q).toFixed(2)+' €</td></tr>').join('')}
-</table>
-<hr style="border:1px dashed #ccc">
-<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:bold;margin:10px 0"><span>TOTAL</span><span>${Number(total).toFixed(2)} €</span></div>
-<div style="text-align:center;font-size:12px;color:#888;margin:6px 0">IVA incluido</div>
-<hr style="border:1px dashed #ccc">
-<div style="text-align:center;margin-top:12px;font-size:13px;color:#888">Gracias por su visita</div>
-<div style="text-align:center;font-size:11px;color:#aaa">runfolapizzas.com</div>
-</body></html>`;
-  try{
-    const apiBase=WSU.replace('wss://','https://').replace('ws://','http://');
-    const r=await fetch(apiBase+'/ticket-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to,ticketHtml,subject:'Factura simplificada Nº '+ticketId+' · Runfola'})});
-    if(r.ok)toast('Email enviado','Factura enviada a '+to,'📧');
-    else toast('Error','No se pudo enviar','⚠️');
-  }catch(e){toast('Error','Sin conexión','⚠️');}
-}
-window.emailTicket=emailTicket;
 
 // ══ WS ════════════════════════════════════════════════════════════════════════
 function mergeSyncEntity(local,remote){
