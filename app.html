@@ -435,7 +435,10 @@ function enviarWhatsApp(data){
   let txt='*RUNFOLA PIZZAS*\n'+(data.label||'')+'\n\n';
   txt+=items.map(x=>`${x.q}x ${x.n} — ${eur(x.p*x.q)}`).join('\n');
   txt+='\n\n*TOTAL: '+eur(total)+'*\nIVA incluido\nGracias por su visita';
-  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+  const raw=prompt('Número del cliente (9 dígitos):');
+  const digits=(raw||'').replace(/\D/g,'');
+  const numero=digits?(digits.length===9?'34'+digits:digits):'';
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(txt),'_blank');
 }
 window.enviarWhatsApp=enviarWhatsApp;
 
