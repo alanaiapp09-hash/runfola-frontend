@@ -430,6 +430,7 @@ async function printTicket(data,isCopy){
 window.printTicket=printTicket;
 
 function enviarWhatsApp(data){
+  const win=window.open('','_blank');
   const items=data.items||[];
   const total=items.reduce((s,x)=>s+(x.p||0)*(x.q||1),0);
   let txt='*RUNFOLA PIZZAS*\n'+(data.label||'')+'\n\n';
@@ -438,7 +439,8 @@ function enviarWhatsApp(data){
   const raw=prompt('Número del cliente (9 dígitos):');
   const digits=(raw||'').replace(/\D/g,'');
   const numero=digits?(digits.length===9?'34'+digits:digits):'';
-  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(txt),'_blank');
+  const url='https://wa.me/'+numero+'?text='+encodeURIComponent(txt);
+  if(win)win.location.href=url;else window.open(url,'_blank');
 }
 window.enviarWhatsApp=enviarWhatsApp;
 
