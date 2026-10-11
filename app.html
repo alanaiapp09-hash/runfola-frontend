@@ -450,7 +450,6 @@ async function printTicket(data,isCopy){
 window.printTicket=printTicket;
 
 function enviarWhatsApp(data){
-  const win=window.open('','_blank');
   const items=data.items||[];
   const total=items.reduce((s,x)=>s+(x.p||0)*(x.q||1),0);
   let txt='*RUNFOLA PIZZAS*\n'+(data.label||'')+'\n\n';
@@ -461,7 +460,6 @@ function enviarWhatsApp(data){
   const digits=(raw||'').replace(/\D/g,'');
   const numero=digits?(digits.length===9?'34'+digits:digits):'';
   const url='https://wa.me/'+numero+'?text='+encodeURIComponent(txt);
-  if(win)win.location.href=url;else window.open(url,'_blank');
   if(numero){
     const SUPA_URL='https://prgcehzpciczaqzuiqnt.supabase.co';
     const SUPA_KEY='sb_publishable_ESoN6gNl1tWdy44qpgQioQ_Ya1IriLu';
@@ -479,6 +477,7 @@ function enviarWhatsApp(data){
       })
     }).catch(e=>console.error('[supabase]',e));
   }
+  window.open(url,'_blank');
 }
 window.enviarWhatsApp=enviarWhatsApp;
 
