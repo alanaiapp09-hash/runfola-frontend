@@ -158,6 +158,8 @@ let clientes=[],cliSeq=1,mesaAct=null,catAct=null,ws=null,tTimer=null;
 let staCmds=[],cajaCmds=[];let cajaReady=false;
 let splitSrcMesaId=null,splitN=0,splitSubIdx=0,splitSubItems=[],splitAssigned={},splitLastBill=null;
 let cajaOrders={};
+let cajaOrderCopySeen=new Set();
+const cmdKey=m=>m.id!=null?('id:'+m.id):((m.orderNum||'')+'|'+(m.dest||''));
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 const eur=v=>Number(v||0).toFixed(2).replace('.',',')+' €';
@@ -339,13 +341,13 @@ function addAviso(msg){const el=$('#alist');if(!el)return;const nb=$('#nb-a');if
 function buildStation(destF,titulo){staCmds=[];$('#main').innerHTML=`<div class="slabel">${titulo}<span id="stb" style="color:#FF6B35"></span></div><div id="stl"><div style="padding:40px 20px;text-align:center;color:#555">Esperando comandas…</div></div>`;$('#botnav').innerHTML='';}
 function renderStation(){const el=$('#stl'),badge=$('#stb');if(!el)return;const pend=staCmds.filter(c=>c.st==='pend').length;if(badge)badge.textContent=pend?` · ${pend} pendiente${pend>1?'s':''}` :'';if(!staCmds.length){el.innerHTML='<div style="padding:40px 20px;text-align:center;color:#555">Sin comandas</div>';return;}
 el.innerHTML=staCmds.map((c,i)=>c.cancel?`<div class="cmd-card cancel"><div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><div style="font-size:38px;line-height:1;color:#ff5b5b;font-weight:900;flex-shrink:0">✕</div><div style="flex:1;min-width:0"><div style="font-size:19px;font-weight:900;color:#ff5b5b;letter-spacing:.02em">❌ ANULADO${c.orderNum?' · <span style="background:#ff5b5b;color:#fff;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:800">'+c.orderNum+'</span>':''}</div><div class="cmd-cam" style="color:#ff5b5b">${c.label} · mesa ${c.mesa}</div></div><span class="cmd-time" style="flex-shrink:0">${c.t}</span></div><div class="cmd-items">${c.items.map(x=>`<div class="cmd-item" style="color:#ff8a8a;text-decoration:line-through;font-weight:700">${x.q}× ${x.n}</div>`).join('')}</div><div class="cmd-acts"><button class="ca" style="background:#ff5b5b;color:#fff" onclick="staVisto(${i})">✓ Visto</button></div></div>`:`<div class="cmd-card ${c.st==='pend'?'new':''}"><div class="cmd-top"><div><div class="cmd-lbl">${c.label}${c.orderNum?' · <span style="background:#FFD700;color:#111;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:800">'+c.orderNum+'</span>':''}</div>${c.camarero?`<div class="cmd-cam">👤 ${c.camarero}</div>`:''}</div><div class="cmd-meta"><span class="cmd-time">${c.t}</span><span class="cmd-dest d-${c.dest}">${c.dest}</span></div></div><div class="cmd-items">${c.items.map(x=>`<div class="cmd-item">${x.q}× ${x.n}</div>`).join('')}${c.nota?`<div class="cmd-nota">⚠️ ${c.nota}</div>`:''}</div><div class="cmd-acts">${c.st==='pend'?`<button class="ca ca-ok" onclick="staListo(${i})">✓ Listo — avisar camarer@</button>`:`<button class="ca ca-done" disabled>Entregado</button>`}</div></div>`).join('');}
-function staListo(i){const c=staCmds[i];if(!c)return;c.st='done';emit({type:'ready',action:'ready',mesa:c.mesa,label:c.label,item:c.items[0]?.n||''});renderStation();}
+function staListo(i){const c=staCmds[i];if(!c)return;c.st='done';emit({type:'ready',action:'ready',mesa:c.mesa,label:c.label,item:c.items[0]?.n||'',orderId:c.id,orderNum:c.orderNum,dest:c.dest});renderStation();}
 function staVisto(i){staCmds.splice(i,1);renderStation();}
 window.staVisto=staVisto;
 window.staListo=staListo;
 
 // ══ CAJA ══════════════════════════════════════════════════════════════════════
-function buildCash(){cajaCmds=[];cajaOrders={};$('#main').innerHTML=`
+function buildCash(){cajaCmds=[];cajaOrders={};cajaOrderCopySeen=new Set();$('#main').innerHTML=`
 <div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid #2a2a2a">
   <button onclick="cashTab('cuentas',this)" style="flex:1;padding:10px;border-radius:12px;border:none;font-weight:800;font-size:13px;cursor:pointer;background:#FF6B35;color:#fff">Cuentas</button>
   <button onclick="cashTab('control',this)" style="flex:1;padding:10px;border-radius:12px;border:none;font-weight:800;font-size:13px;cursor:pointer;background:#2a2a2a;color:#888">Control</button>
@@ -471,11 +473,11 @@ if(msg.type==='sync'){
     if(Array.isArray(msg.clientes))clientes=msg.clientes;
   }
 }
-if(msg.type==='order'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){staCmds.unshift({...msg,t:hhmm(),st:'pend'});renderStation();vib();toast('Nueva comanda',msg.label,'🍳');}}
+if(msg.type==='order'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){const k=cmdKey(msg);if(staCmds.some(c=>cmdKey(c)===k))return;staCmds.unshift({...msg,t:hhmm(),st:'pend'});renderStation();vib();toast('Nueva comanda',msg.label,'🍳');}}
 if(msg.type==='cancel'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){staCmds.unshift({...msg,t:hhmm(),st:'cancel',cancel:true});renderStation();vib();}}
-if((msg.type==='order-copy')&&ROL==='cash'){addCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});}
+if((msg.type==='order-copy')&&ROL==='cash'){const k=cmdKey(msg);if(cajaOrderCopySeen.has(k))return;cajaOrderCopySeen.add(k);addCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});}
 if((msg.type==='cancel-copy')&&ROL==='cash'){subCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});}
-if(msg.type==='bill'&&ROL==='cash'){cajaCmds.unshift({...msg,t:hhmm()});renderCash();vib();toast('Cuenta',msg.label,'🧾');}
+if(msg.type==='bill'&&ROL==='cash'){const k=cmdKey(msg);if(cajaCmds.some(c=>cmdKey(c)===k))return;cajaCmds.unshift({...msg,t:hhmm()});renderCash();vib();toast('Cuenta',msg.label,'🧾');}
 if(msg.type==='notify'&&msg.action==='ready'&&ROL==='waiter'){const txt=msg.label+': '+msg.item+' listo';toast('Plato listo',txt,'🍽️');addAviso(msg);vib();if(Notification?.permission==='granted')new Notification('Plato listo',{body:txt}).catch(()=>{});}
 if(msg.type==='menu-update'&&msg.menu){applyMenu(msg.menu);if(ROL==='waiter'&&mesaAct!=null){renderCatBar();renderMenuItems();}}
 });}catch(e){setLive(false);}}
