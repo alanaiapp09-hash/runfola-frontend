@@ -77,6 +77,14 @@ button,input,textarea{font:inherit;color:inherit}
 .qp{background:#ADFF2F;color:#0d1800}
 .qn{min-width:22px;text-align:center;font-size:17px;font-weight:900}
 .qn.hasq{color:#ADFF2F}
+.modrow{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.modlbl{font-size:11px;color:#888;font-weight:700}
+.modctr{display:flex;align-items:center;gap:6px}
+.modb{width:24px;height:24px;border-radius:50%;border:none;background:#2a2a2a;color:#fff;font-size:14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.modb:active{transform:scale(.88)}
+.modn{min-width:16px;text-align:center;font-size:13px;font-weight:800;color:#FFB347}
+.modsg{display:flex;align-items:center;gap:5px;font-size:11px;color:#888;font-weight:700;cursor:pointer}
+.modsg input{width:15px;height:15px;accent-color:#FF6B35;cursor:pointer}
 .nwrap{padding:12px 14px 6px}
 .nta{width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid #2a2a2a;background:#1a1a1a;color:#fff;font-size:14px;resize:none}
 .nta:focus{outline:none;border-color:#FF6B35}
@@ -152,6 +160,7 @@ const SP=new URLSearchParams(location.search);
 const ROL=SP.get('role')||'waiter';
 const WSU=SP.get('backend')||'wss://runfola-backend2-production.up.railway.app';
 const CMAP={pizzas:'c-pri',especiales:'c-pri',entrantes:'c-pri',ensaladas:'c-pri',postres:'c-pri',bebidas:'c-beb'};
+const MOD_CATS=['pizzas','especiales'];
 let CATS=[],MENU={};
 let mesas=Array.from({length:10},(_,i)=>({id:i+1,tipo:'mesa',estado:'libre',items:[],total:0,orderSeq:0}));
 let clientes=[],cliSeq=1,mesaAct=null,catAct=null,ws=null,tTimer=null;
@@ -159,7 +168,10 @@ let staCmds=[],cajaCmds=[];let cajaReady=false;
 let splitSrcMesaId=null,splitN=0,splitSubIdx=0,splitSubItems=[],splitAssigned={},splitLastBill=null;
 let cajaOrders={};
 let cajaOrderCopySeen=new Set();
+let modSel={};
 const cmdKey=m=>m.id!=null?('id:'+m.id):((m.orderNum||'')+'|'+(m.dest||''));
+const itemLineKey=it=>it.id+'|'+(it.extra||0)+'|'+(it.sg?1:0);
+function modSuffix(extra,sg){const parts=[];if(extra>0)parts.push(`(+${extra} extra)`);if(sg)parts.push('(SG)');return parts.length?(' '+parts.join(' ')):'';}
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 const eur=v=>Number(v||0).toFixed(2).replace('.',',')+' €';
@@ -265,15 +277,21 @@ function onPtSelChange(v){
   if(v.startsWith('m:'))selMesa(Number(v.slice(2)));
   else if(v.startsWith('c:'))selMesa(v.slice(2));
 }
-function selMesa(id){mesaAct=id;catAct=CATS[0]?.id;const e=getE(id);$('#ptit').textContent=e.tipo==='cliente'?e.nombre:'Mesa '+e.id;$('#nota').value='';wTab('p',$$('.bnb')[1]);renderMesaSelector();}
+function selMesa(id){mesaAct=id;catAct=CATS[0]?.id;modSel={};const e=getE(id);$('#ptit').textContent=e.tipo==='cliente'?e.nombre:'Mesa '+e.id;$('#nota').value='';wTab('p',$$('.bnb')[1]);renderMesaSelector();}
 function addCliente(){const inp=$('#cinp'),nom=inp?.value.trim();if(!nom){inp?.focus();return;}const id='cli_'+cliSeq++;clientes.push({id,tipo:'cliente',nombre:nom,estado:'abierta',items:[],total:0,orderSeq:0});inp.value='';emit({type:'sync',mesas,clientes});selMesa(id);}
 function agregarMesa(){const nid=mesas.length?Math.max(...mesas.map(m=>m.id))+1:1;mesas.push({id:nid,tipo:'mesa',estado:'libre',items:[],total:0,orderSeq:0});renderMesas();emit({type:'sync',mesas,clientes});}
 function quitarMesa(){if(mesas.length<=1)return;const u=mesas[mesas.length-1];if(u.estado==='ocupada'){toast('Ocupada','No se puede eliminar','⚠️');return;}if(mesaAct===u.id){mesaAct=null;goMesas();}mesas.pop();renderMesas();emit({type:'sync',mesas,clientes});}
 window.agregarMesa=agregarMesa;window.quitarMesa=quitarMesa;
 function renderCatBar(){const el=$('#ctabs');if(!el)return;el.innerHTML=CATS.map(c=>`<button class="ct ${c.cls} ${catAct===c.id?'on':''}" onclick="selCat('${c.id}')">${c.label}</button>`).join('');}
 function selCat(id){catAct=id;renderCatBar();renderMenuItems();}
-function renderMenuItems(){const el=$('#mlist');if(!el)return;const e=mesaAct!=null?getE(mesaAct):null;const sent=e?e.items.filter(x=>x.qSent>0):[];let h='';if(sent.length){const total=sent.reduce((s,x)=>s+x.p*x.qSent,0);h+=`<div class="xcard" style="border-color:#41d36f"><div class="xh">✓ Pedido actual</div>${sent.map(x=>`<div class="xl"><span>${x.qSent} × ${x.n}</span><span style="display:flex;align-items:center;gap:8px"><span style="color:#FFD700">${eur(x.p*x.qSent)}</span><button onclick="anularItem('${x.id}')" style="width:24px;height:24px;border-radius:50%;border:none;background:#ff5b5b;color:#fff;font-size:14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button></span></div>`).join('')}<div class="xtot"><span>Total enviado</span><span>${eur(total)}</span></div></div>`;}if(catAct){const cat=CATS.find(c=>c.id===catAct);h+=cat?.nota?`<div style="padding:10px 16px;font-size:12px;color:#FFD700;font-weight:700">${cat.nota}</div>`:'';h+=(MENU[catAct]||[]).map(it=>{const item=e?.items.find(x=>x.id===it.id);const q=item?.q||0;const qSent=item?.qSent||0;const qNew=Math.max(0,q-qSent);return `<div class="mrow"><div class="mi"><div class="mn">${it.n}</div><div class="mp">${eur(it.p)}</div></div><div class="qc"><button class="qb qm" onclick="chg('${it.id}',-1)">−</button><div style="text-align:center"><div class="qn${qNew>0?' hasq':''}" id="qi-${it.id}">${q||''}</div>${qSent>0?`<div style="font-size:9px;color:#41d36f;margin-top:1px">✓${qSent}</div>`:''}</div><button class="qb qp" onclick="chg('${it.id}',1)">+</button></div></div>`;}).join('');}el.innerHTML=h;}
-function chg(id,d){if(mesaAct===null)return;const e=getE(mesaAct);const prod=(MENU[catAct]||[]).find(x=>x.id===id);if(!prod)return;let it=e.items.find(x=>x.id===id);if(!it&&d>0)e.items.push({id,n:prod.n,p:prod.p,q:1,cat:catAct,dest:CATS.find(c=>c.id===catAct).dest,qSent:0});else if(it){it.q+=d;if(it.q<=0)e.items=e.items.filter(x=>x.id!==id);else if((it.qSent||0)>it.q)it.qSent=it.q;}e.estado='ocupada';e.total=totE(e);const el=document.getElementById('qi-'+id);if(el){const itm=e.items.find(x=>x.id===id);const q=itm?.q||0;const qNew=Math.max(0,q-(itm?.qSent||0));el.textContent=q||'';el.className='qn'+(qNew>0?' hasq':'');}$('#ptot').textContent=eur(totE(e));emit({type:'sync',mesas,clientes});renderMesas();}
+function renderMenuItems(){const el=$('#mlist');if(!el)return;const e=mesaAct!=null?getE(mesaAct):null;const sent=e?e.items.filter(x=>x.qSent>0):[];let h='';if(sent.length){const total=sent.reduce((s,x)=>s+x.p*x.qSent,0);h+=`<div class="xcard" style="border-color:#41d36f"><div class="xh">✓ Pedido actual</div>${sent.map(x=>`<div class="xl"><span>${x.qSent} × ${x.n}</span><span style="display:flex;align-items:center;gap:8px"><span style="color:#FFD700">${eur(x.p*x.qSent)}</span><button onclick="anularItem(${e.items.indexOf(x)})" style="width:24px;height:24px;border-radius:50%;border:none;background:#ff5b5b;color:#fff;font-size:14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button></span></div>`).join('')}<div class="xtot"><span>Total enviado</span><span>${eur(total)}</span></div></div>`;}if(catAct){const cat=CATS.find(c=>c.id===catAct);const hasMods=MOD_CATS.includes(catAct);h+=cat?.nota?`<div style="padding:10px 16px;font-size:12px;color:#FFD700;font-weight:700">${cat.nota}</div>`:'';h+=(MENU[catAct]||[]).map(it=>{const sel=modSel[it.id]||{extra:0,sg:false};const extra=hasMods?(sel.extra||0):0;const sg=hasMods?!!sel.sg:false;const item=e?.items.find(x=>x.id===it.id&&(x.extra||0)===extra&&!!x.sg===sg);const q=item?.q||0;const qSent=item?.qSent||0;const qNew=Math.max(0,q-qSent);return `<div class="mrow"><div class="mi"><div class="mn">${it.n}</div><div class="mp">${eur(it.p)}</div>${hasMods?modRowHtml(it.id):''}</div><div class="qc"><button class="qb qm" onclick="chg('${it.id}',-1)">−</button><div style="text-align:center"><div class="qn${qNew>0?' hasq':''}" id="qi-${it.id}">${q||''}</div><div id="qsent-${it.id}">${qSent>0?`<span style="font-size:9px;color:#41d36f">✓${qSent}</span>`:''}</div></div><button class="qb qp" onclick="chg('${it.id}',1)">+</button></div></div>`;}).join('');}el.innerHTML=h;}
+function modRowHtml(id){const m=modSel[id]||{extra:0,sg:false};return `<div class="modrow"><span class="modlbl">Extra +1€</span><div class="modctr"><button type="button" class="modb" onclick="modExtraChg('${id}',-1)">−</button><span class="modn" id="modn-${id}">${m.extra||0}</span><button type="button" class="modb" onclick="modExtraChg('${id}',1)">+</button></div><label class="modsg"><input type="checkbox" id="modsg-${id}" ${m.sg?'checked':''} onchange="modSgToggle('${id}',this.checked)">Sin gluten +1,50€</label></div>`;}
+function modExtraChg(id,d){if(!modSel[id])modSel[id]={extra:0,sg:false};modSel[id].extra=Math.max(0,(modSel[id].extra||0)+d);const el=document.getElementById('modn-'+id);if(el)el.textContent=modSel[id].extra;syncRowQty(id);}
+window.modExtraChg=modExtraChg;
+function modSgToggle(id,checked){if(!modSel[id])modSel[id]={extra:0,sg:false};modSel[id].sg=!!checked;syncRowQty(id);}
+window.modSgToggle=modSgToggle;
+function syncRowQty(id){if(mesaAct===null)return;const e=getE(mesaAct);if(!e)return;const hasMods=MOD_CATS.includes(catAct);const sel=modSel[id]||{extra:0,sg:false};const extra=hasMods?(sel.extra||0):0;const sg=hasMods?!!sel.sg:false;const it=e.items.find(x=>x.id===id&&(x.extra||0)===extra&&!!x.sg===sg);const q=it?.q||0;const qSent=it?.qSent||0;const qNew=Math.max(0,q-qSent);const el=document.getElementById('qi-'+id);if(el){el.textContent=q||'';el.className='qn'+(qNew>0?' hasq':'');}const se=document.getElementById('qsent-'+id);if(se)se.innerHTML=qSent>0?`<span style="font-size:9px;color:#41d36f">✓${qSent}</span>`:'';}
+function chg(id,d){if(mesaAct===null)return;const e=getE(mesaAct);const prod=(MENU[catAct]||[]).find(x=>x.id===id);if(!prod)return;const hasMods=MOD_CATS.includes(catAct);const sel=modSel[id]||{extra:0,sg:false};const extra=hasMods?(sel.extra||0):0;const sg=hasMods?!!sel.sg:false;let it=e.items.find(x=>x.id===id&&(x.extra||0)===extra&&!!x.sg===sg);if(!it&&d>0){it={id,n:prod.n+modSuffix(extra,sg),p:prod.p+extra*1+(sg?1.5:0),q:1,cat:catAct,dest:CATS.find(c=>c.id===catAct).dest,qSent:0,extra,sg};e.items.push(it);}else if(it){it.q+=d;if(it.q<=0){e.items=e.items.filter(x=>x!==it);it=null;}else if((it.qSent||0)>it.q)it.qSent=it.q;}e.estado='ocupada';e.total=totE(e);const q=it?it.q:0;const qNew=Math.max(0,q-(it?.qSent||0));const el=document.getElementById('qi-'+id);if(el){el.textContent=q||'';el.className='qn'+(qNew>0?' hasq':'');}const se=document.getElementById('qsent-'+id);if(se)se.innerHTML=(it&&it.qSent>0)?`<span style="font-size:9px;color:#41d36f">✓${it.qSent}</span>`:'';$('#ptot').textContent=eur(totE(e));emit({type:'sync',mesas,clientes});renderMesas();}
 window.chg=chg;
 function enviarAuto(){
   if(mesaAct===null){toast('Sin mesa','','⚠️');return;}
@@ -305,10 +323,10 @@ function enviarAuto(){
   toast('✅ '+orderNum,label+' → '+destinos.join(', '),'📤');
 }
 window.enviarAuto=enviarAuto;
-function anularItem(id){
+function anularItem(idx){
   if(mesaAct===null)return;
   const e=getE(mesaAct);
-  const it=e.items.find(x=>x.id===id);
+  const it=e.items[idx];
   if(!it||!it.qSent)return;
   let n=1;
   if(it.qSent>1){
@@ -322,10 +340,10 @@ function anularItem(id){
   const mesaKey=e.tipo==='cliente'?e.nombre.slice(0,3).toUpperCase():'M'+e.id;
   const orderNum=mesaKey+'-A'+e.orderSeq;
   const label=e.tipo==='cliente'?e.nombre:'Mesa '+e.id;
-  emit({type:'cancel',mesa:mesaAct,label,dest:it.dest,orderNum,items:[{n:it.n,q:n}],camarero:'',time:new Date().toISOString()});
+  emit({type:'cancel',mesa:mesaAct,label,dest:it.dest,orderNum,items:[{id:it.id,n:it.n,q:n,extra:it.extra||0,sg:!!it.sg}],camarero:'',time:new Date().toISOString()});
   it.qSent-=n;
   it.q-=n;
-  if(it.q<=0)e.items=e.items.filter(x=>x.id!==id);
+  if(it.q<=0)e.items=e.items.filter(x=>x!==it);
   e.total=totE(e);
   $('#ptot').textContent=eur(totE(e));
   renderMenuItems();
@@ -366,7 +384,7 @@ function addCajaOrder(msg){
   const key=String(msg.mesa);
   if(!cajaOrders[key])cajaOrders[key]={label:msg.label,camarero:msg.camarero||'',items:[],total:0};
   (msg.items||[]).forEach(it=>{
-    const exist=cajaOrders[key].items.find(x=>x.id===it.id);
+    const exist=cajaOrders[key].items.find(x=>itemLineKey(x)===itemLineKey(it));
     if(exist)exist.q+=(it.q||1);
     else cajaOrders[key].items.push({...it});
   });
@@ -377,7 +395,7 @@ function subCajaOrder(msg){
   const key=String(msg.mesa);
   const o=cajaOrders[key];if(!o)return;
   (msg.items||[]).forEach(it=>{
-    const idx=o.items.findIndex(x=>(it.id&&x.id===it.id)||x.n===it.n);
+    const idx=o.items.findIndex(x=>(it.id&&itemLineKey(x)===itemLineKey(it))||x.n===it.n);
     if(idx===-1)return;
     o.items[idx].q-=(it.q||1);
     if(o.items[idx].q<=0)o.items.splice(idx,1);
@@ -451,7 +469,7 @@ function mergeSyncEntity(local,remote){
   if(!local)return remote;
   const merged={...remote,orderSeq:local.orderSeq||0};
   merged.items=(remote.items||[]).map(ri=>{
-    const li=local.items.find(x=>x.id===ri.id);
+    const li=local.items.find(x=>x.id===ri.id&&(x.extra||0)===(ri.extra||0)&&!!x.sg===!!ri.sg);
     return li?{...ri,qSent:li.qSent||0}:ri;
   });
   return merged;
