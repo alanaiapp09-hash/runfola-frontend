@@ -477,7 +477,7 @@ function enviarWhatsApp(data){
       })
     }).catch(e=>console.error('[supabase]',e));
   }
-  window.open(url,'_blank');
+  window.location.href=url;
 }
 window.enviarWhatsApp=enviarWhatsApp;
 
