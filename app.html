@@ -193,7 +193,7 @@ function marcarImpresa(k){ try{ const a=_impresas(); if(!a.includes(k)){ a.push(
 function limpiarImpresas(){ try{ localStorage.removeItem('qo_impresas'); }catch(e){} }
 function _ascii(s){ return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ñ/g,'n').replace(/Ñ/g,'N'); }
 function _escXml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function _t(s,o){ o=o||{}; let a=''; if(o.align)a+=` align="${o.align}"`; if(o.em)a+=' em="true"'; if(o.dw)a+=' dw="true"'; if(o.dh)a+=' dh="true"'; return `<text${a}>${_escXml(_ascii(s))}&#10;</text>`; }
+function _t(s,o){ o=o||{}; let a=''; if(o.align)a+=` align="${o.align}"`; if(o.font)a+=` font="${o.font}"`; if(o.em)a+=' em="true"'; if(o.dw)a+=' dw="true"'; if(o.dh)a+=' dh="true"'; return `<text${a}>${_escXml(_ascii(s))}&#10;</text>`; }
 const _feed=(n)=>`<feed line="${n||1}"/>`;
 const _cut='<cut type="feed"/>';
 const _sep='<text>------------------------------------------&#10;</text>';
@@ -225,12 +225,27 @@ function comandaAnulacionXML(d){
 }
 // d={mesa,fecha,lineas:[{izq,der}],total}
 function ticketCajaXML(d){
-  const W=42; const row=(l,r,o)=>{ l=_ascii(String(l)); r=_ascii(String(r)); const sp=Math.max(1,W-l.length-r.length); return _t(l+' '.repeat(sp)+r,o); };
-  let b=''; b+=_t('RUNFOLA',{align:'center',em:true,dw:true,dh:true}); b+=_feed(1);
-  b+=row('Mesa '+d.mesa, d.fecha); b+=_sep;
-  d.lineas.forEach(ln=> b+=row(ln.izq, ln.der)); b+=_sep;
-  b+=row('TOTAL EUR', d.total, {em:true}); b+=_sep;
-  b+=_t('Gracias por su visita',{align:'center'}); b+=_feed(2)+_cut; return b;
+  const W=42;
+  const sepB='<text font="font_b">'+'-'.repeat(W)+'&#10;</text>';
+  const row=(l,r,o)=>{ l=_ascii(String(l)); r=_ascii(String(r)); const sp=Math.max(1,W-l.length-r.length); return _t(l+' '.repeat(sp)+r,o); };
+  let b='';
+  b+=_t('RUNFOLA PIZZAS',{align:'center',em:true,dh:true});
+  b+=_t('C.C. Zoco, calle la Orden 8',{align:'center',font:'font_b'});
+  b+=_t('Local 20',{align:'center',font:'font_b'});
+  b+=_t('Tel. 910 528 283',{align:'center',font:'font_b'});
+  b+=_t('www.runfolapizzas.com',{align:'center',font:'font_b'});
+  b+=_feed(1);
+  b+=sepB;
+  b+=row(d.mesa,d.fecha,{font:'font_b'});
+  b+=sepB;
+  d.lineas.forEach(ln=> b+=row(ln.izq,ln.der,{font:'font_b'}));
+  b+=sepB;
+  b+=row('TOTAL',d.total,{font:'font_b',em:true});
+  b+=sepB;
+  b+=_t('Gracias por su visita',{align:'center',font:'font_b'});
+  b+=_t('Lo esperamos pronto!',{align:'center',font:'font_b'});
+  b+=_feed(2)+_cut;
+  return b;
 }
 window.setEstacionImpresion=setEstacionImpresion;
 
