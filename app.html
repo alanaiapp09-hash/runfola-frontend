@@ -183,6 +183,57 @@ const getE=id=>typeof id==='number'?mesas.find(x=>x.id===id):clientes.find(x=>x.
 const totE=e=>e.items.reduce((s,x)=>s+x.p*x.q,0);
 const emit=p=>{if(ws?.readyState===1)ws.send(JSON.stringify(p))};
 
+/* ============ IMPRESIÓN Epson TM-m30II (barra) ============ */
+const PRINTER_IP = '192.168.1.18';
+function esEstacionImpresion(){ try{ return localStorage.getItem('qo_print_station')==='1'; }catch(e){ return false; } }
+function setEstacionImpresion(v){ try{ localStorage.setItem('qo_print_station', v?'1':'0'); }catch(e){} }
+function _impresas(){ try{ return JSON.parse(localStorage.getItem('qo_impresas')||'[]'); }catch(e){ return []; } }
+function yaImpresa(k){ return _impresas().includes(k); }
+function marcarImpresa(k){ try{ const a=_impresas(); if(!a.includes(k)){ a.push(k); localStorage.setItem('qo_impresas', JSON.stringify(a.slice(-500))); } }catch(e){} }
+function limpiarImpresas(){ try{ localStorage.removeItem('qo_impresas'); }catch(e){} }
+function _ascii(s){ return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ñ/g,'n').replace(/Ñ/g,'N'); }
+function _escXml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _t(s,o){ o=o||{}; let a=''; if(o.align)a+=` align="${o.align}"`; if(o.em)a+=' em="true"'; if(o.dw)a+=' dw="true"'; if(o.dh)a+=' dh="true"'; return `<text${a}>${_escXml(_ascii(s))}&#10;</text>`; }
+const _feed=(n)=>`<feed line="${n||1}"/>`;
+const _cut='<cut type="feed"/>';
+const _sep='<text>------------------------------------------&#10;</text>';
+function _setPrintStatus(ok){ const el=document.getElementById('printStatus'); if(el){ el.textContent= ok?'🖨️ Impresora OK':'🖨️ Sin impresora'; el.style.color= ok?'#2e7d32':'#c62828'; } }
+async function _print(bodyXml){
+  try{
+    const url=`https://${PRINTER_IP}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`;
+    const xml=`<?xml version="1.0" encoding="utf-8"?>`+
+      `<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>`+
+      `<epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">`+bodyXml+`</epos-print>`+
+      `</s:Body></s:Envelope>`;
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/xml; charset=utf-8'},body:xml});
+    const txt=await r.text(); const ok=txt.includes('success="true"'); _setPrintStatus(ok); return ok;
+  }catch(e){ _setPrintStatus(false); return false; }
+}
+// d={mesa,pedido,fecha,items:[{qty,nombre,notas:[...]}]}
+function comandaCocinaXML(d){
+  let b=''; b+=_t('COMANDA COCINA',{align:'center',em:true});
+  b+=_t('Mesa '+d.mesa,{align:'center',dw:true,dh:true});
+  b+=_t('Pedido '+d.pedido,{align:'center'}); b+=_t(d.fecha,{align:'center'}); b+=_sep;
+  d.items.forEach(it=>{ b+=_t(it.qty+'x '+it.nombre,{em:true,dh:true}); (it.notas||[]).forEach(n=> b+=_t('   '+n)); });
+  b+=_sep+_feed(1)+_cut; return b;
+}
+function comandaAnulacionXML(d){
+  let b=''; b+=_t('** ANULACION **',{align:'center',em:true,dw:true,dh:true});
+  b+=_t('Mesa '+d.mesa,{align:'center',dh:true}); b+=_t(d.fecha,{align:'center'}); b+=_sep;
+  d.items.forEach(it=> b+=_t(it.qty+'x '+it.nombre,{em:true,dh:true}));
+  b+=_sep+_feed(1)+_cut; return b;
+}
+// d={mesa,fecha,lineas:[{izq,der}],total}
+function ticketCajaXML(d){
+  const W=42; const row=(l,r,o)=>{ l=_ascii(String(l)); r=_ascii(String(r)); const sp=Math.max(1,W-l.length-r.length); return _t(l+' '.repeat(sp)+r,o); };
+  let b=''; b+=_t('RUNFOLA',{align:'center',em:true,dw:true,dh:true}); b+=_feed(1);
+  b+=row('Mesa '+d.mesa, d.fecha); b+=_sep;
+  d.lineas.forEach(ln=> b+=row(ln.izq, ln.der)); b+=_sep;
+  b+=row('TOTAL EUR', d.total, {em:true}); b+=_sep;
+  b+=_t('Gracias por su visita',{align:'center'}); b+=_feed(2)+_cut; return b;
+}
+window.setEstacionImpresion=setEstacionImpresion;
+
 const MENU_DATA = {"restaurante":{"nombre":"Runfola","subtitulo":"coffee · pizzería · bar"},"categorias":[{"id":"pizzas","label":"Pizzas","dest":"cocina","items":[{"id":"pz1","n":"Margarita","p":10.9},{"id":"pz2","n":"Tentazione","p":14.9},{"id":"pz3","n":"Cabramelizada","p":14.9},{"id":"pz4","n":"Diavola Dolce","p":13.9},{"id":"pz5","n":"Diavola Inferno","p":13.9},{"id":"pz6","n":"Bella Italia","p":14.9},{"id":"pz7","n":"Tartufatta","p":14.9},{"id":"pz8","n":"Isleña","p":14.9},{"id":"pz9","n":"Genovesa","p":13.9},{"id":"pz10","n":"Proscuitto","p":13.9},{"id":"pz11","n":"Funghi e Proscuitto","p":14.9},{"id":"pz12","n":"Capricciosa","p":14.9},{"id":"pz13","n":"Tonno","p":14.9},{"id":"pz14","n":"Frankfurt","p":14.9},{"id":"pz15","n":"Hawaiana","p":13.9},{"id":"pz16","n":"A tu gusto","p":14.9}]},{"id":"especiales","label":"Las Especiales","dest":"cocina","items":[{"id":"sp1","n":"Gourmet","p":15.9},{"id":"sp2","n":"BBQ Pollo Asado","p":15.9},{"id":"sp3","n":"BBQ Pulled Pork","p":15.9},{"id":"sp4","n":"Carbonara","p":15.9},{"id":"sp5","n":"5 Quesos","p":15.9},{"id":"sp6","n":"Vegetal","p":15.9},{"id":"sp7","n":"Doble Pepperoni","p":14.9}]},{"id":"entrantes","label":"Entrantes","dest":"cocina","items":[{"id":"en1","n":"Provoleta","p":11.9},{"id":"en2","n":"Pan de Ajo","p":9.9},{"id":"en3","n":"Tequeños","p":9.9},{"id":"en4","n":"Fingers de Pollo","p":9.9},{"id":"en5","n":"Aros de Cebolla","p":8.9},{"id":"en6","n":"Patatas y Frankfurt","p":8.9},{"id":"en7","n":"Patatas Bravioli","p":8.9},{"id":"en8","n":"Patatas Trufadas con Bacon","p":9.9},{"id":"en9","n":"Flor de Alcachofa Confitada","p":5.5}]},{"id":"ensaladas","label":"Ensaladas","dest":"cocina","items":[{"id":"es1","n":"Burrata","p":12.9},{"id":"es2","n":"César","p":13.9},{"id":"es3","n":"Tonno","p":9.9}]},{"id":"postres","label":"Postres","dest":"cocina","items":[{"id":"po1","n":"Tarta de Queso Pistacho","p":6.9},{"id":"po2","n":"Tarta de Queso Nutella","p":6.9},{"id":"po3","n":"Tarta de Queso Frutos Rojos","p":6.9},{"id":"po4","n":"Helado de Caramelo Salado","p":5.5},{"id":"po5","n":"Pizzeta Dolce Nutella","p":8.9},{"id":"po6","n":"Pizzeta Dolce Pistacho","p":8.9}]},{"id":"bebidas","label":"Bebidas","dest":"barra","items":[{"id":"bv1","n":"Mahou verde lata","p":2},{"id":"bv2","n":"Mahou verde tercio","p":3.5},{"id":"bv3","n":"Tercio 0'0","p":3.2},{"id":"bv4","n":"Tercio Sin Gluten","p":3.2},{"id":"bv5","n":"Jarra","p":5},{"id":"bv6","n":"Coca-Cola","p":3},{"id":"bv7","n":"Coca-Cola Zero","p":3},{"id":"bv8","n":"Fanta Limón","p":3},{"id":"bv9","n":"Fanta Naranja","p":3},{"id":"bv10","n":"Nestea","p":3},{"id":"bv11","n":"Aquarius Limón","p":3},{"id":"bv12","n":"Aquarius Naranja","p":3},{"id":"bv13","n":"Agua con Gas","p":3},{"id":"bv14","n":"Agua Solán de Cabras 50cl","p":2},{"id":"bv15","n":"Agua 1,5L","p":4},{"id":"bv16","n":"Copa de Vino","p":4},{"id":"bv17","n":"Botella Vino ALMA","p":15},{"id":"bv18","n":"Café","p":2}]}]};
 
 async function boot(){
@@ -375,9 +426,22 @@ function buildCash(){cajaCmds=[];cajaOrders={};cajaOrderCopySeen=new Set();$('#m
   <button onclick="cashTab('mesas',this)" style="flex:1;padding:10px;border-radius:12px;border:none;font-weight:800;font-size:13px;cursor:pointer;background:#2a2a2a;color:#888">Mesas</button>
 </div>
 <div id="cash-cuentas"><div class="slabel">Cuentas pendientes<span id="cb" style="color:#FF6B35"></span></div><div id="cl"><div style="padding:40px 20px;text-align:center;color:#555">Sin cuentas</div></div></div>
-<div id="cash-control" style="display:none"><div class="slabel">Pedidos por mesa <button onclick="resetControl()" style="padding:6px 12px;border-radius:8px;border:1.5px solid #ff5b5b;background:transparent;color:#ff5b5b;font-weight:800;font-size:11px;cursor:pointer">🗑️ Limpiar</button></div><div id="ctrl-list"><div style="padding:40px 20px;text-align:center;color:#555">Sin pedidos</div></div></div>
+<div id="cash-control" style="display:none">
+  <div class="xcard" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <div style="min-width:0">
+      <div style="font-weight:800;font-size:13px">Estación de impresión (este dispositivo)</div>
+      <span id="printStatus" style="font-size:11px;color:#c62828">🖨️ Sin impresora</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <input type="checkbox" id="chkEstacionImpresion" onchange="setEstacionImpresion(this.checked)" style="width:20px;height:20px;accent-color:#41d36f;cursor:pointer">
+      <button onclick="_print(_t('PRUEBA OK',{align:'center',em:true})+_feed(2)+_cut)" style="padding:8px 12px;border-radius:10px;border:1.5px solid #00CFFF;background:transparent;color:#00CFFF;font-weight:800;font-size:11px;cursor:pointer">Probar impresora</button>
+    </div>
+  </div>
+  <div class="slabel">Pedidos por mesa <button onclick="resetControl()" style="padding:6px 12px;border-radius:8px;border:1.5px solid #ff5b5b;background:transparent;color:#ff5b5b;font-weight:800;font-size:11px;cursor:pointer">🗑️ Limpiar</button></div><div id="ctrl-list"><div style="padding:40px 20px;text-align:center;color:#555">Sin pedidos</div></div></div>
 <div id="cash-mesas" style="display:none"><div class="slabel">Editar mesas</div><div id="mesa-edit-list"><div style="padding:40px 20px;text-align:center;color:#555">Sin mesas</div></div></div>`;
-$('#botnav').innerHTML='';}
+$('#botnav').innerHTML='';
+const chkEst=document.getElementById('chkEstacionImpresion');if(chkEst)chkEst.checked=esEstacionImpresion();
+}
 function cashTab(id,btn){
   document.getElementById('cash-cuentas').style.display=id==='cuentas'?'block':'none';
   document.getElementById('cash-control').style.display=id==='control'?'block':'none';
@@ -455,6 +519,7 @@ function renderCash(){
       <button style="flex:1;padding:10px;border-radius:12px;border:1.5px solid #888;background:transparent;color:#888;font-weight:800;font-size:12px;cursor:pointer" onclick="printTicket(cajaCmds[${i}],true)">📋 Copia</button>
       <button style="flex:1;padding:10px;border-radius:12px;border:1.5px solid #25D366;background:transparent;color:#25D366;font-weight:800;font-size:12px;cursor:pointer" onclick="enviarWhatsApp(cajaCmds[${i}])">📲 WhatsApp</button>
     </div>
+    <button style="width:100%;margin-top:8px;padding:10px;border-radius:12px;border:1.5px solid #FFD700;background:transparent;color:#FFD700;font-weight:800;font-size:12px;cursor:pointer" onclick="imprimirTicketCaja(cajaCmds[${i}])">🖨️ Imprimir ticket</button>
     <button class="xcls" onclick="cajaCobrar(${i})">✓ Cobrado — cerrar mesa</button>
   </div>`).join('');}
 function cajaCobrar(i){const c=cajaCmds[i];if(!confirm('¿Seguro cerrar '+c.label+'?'))return;emit({type:'close',mesa:c.mesa,clientes:[]});cajaCmds.splice(i,1);renderCash();toast('Cerrada',c.label+' cobrada','✅');}
@@ -507,6 +572,16 @@ function enviarWhatsApp(data){
 }
 window.enviarWhatsApp=enviarWhatsApp;
 
+function imprimirTicketCaja(data){
+  try{
+    const items=data.items||[];
+    const total=items.reduce((s,x)=>s+(x.p||0)*(x.q||1),0);
+    const lineas=items.map(x=>({izq:x.q+'x '+x.n,der:eur(x.p*x.q)}));
+    _print(ticketCajaXML({mesa:data.label||'',fecha:hhmm(),lineas,total:eur(total)}));
+  }catch(e){}
+}
+window.imprimirTicketCaja=imprimirTicketCaja;
+
 // ══ WS ════════════════════════════════════════════════════════════════════════
 function mergeSyncEntity(local,remote){
   if(!local)return remote;
@@ -519,6 +594,30 @@ function mergeSyncEntity(local,remote){
 }
 function mergeSyncList(localList,remoteList){
   return remoteList.map(re=>mergeSyncEntity(localList.find(le=>le.id===re.id),re));
+}
+function _procesarComandaImpresionCocina(msg){
+  try{
+    if(!esEstacionImpresion())return;
+    if(msg.dest!=='cocina')return;
+    if(!msg.orderNum||yaImpresa(msg.orderNum))return;
+    const itemsCoc=(msg.items||[]).map(it=>({qty:it.q,nombre:it.n,notas:[]}));
+    if(!itemsCoc.length)return;
+    const mesaDisp=(typeof msg.mesa==='number')?msg.mesa:(msg.label||'');
+    _print(comandaCocinaXML({mesa:mesaDisp,pedido:msg.orderNum,fecha:hhmm(),items:itemsCoc}));
+    marcarImpresa(msg.orderNum);
+  }catch(e){}
+}
+function _procesarAnulacionImpresionCocina(msg){
+  try{
+    if(!esEstacionImpresion())return;
+    if(msg.dest!=='cocina')return;
+    if(!msg.orderNum||yaImpresa(msg.orderNum))return;
+    const itemsCoc=(msg.items||[]).map(it=>({qty:it.q,nombre:it.n}));
+    if(!itemsCoc.length)return;
+    const mesaDisp=(typeof msg.mesa==='number')?msg.mesa:(msg.label||'');
+    _print(comandaAnulacionXML({mesa:mesaDisp,fecha:hhmm(),items:itemsCoc}));
+    marcarImpresa(msg.orderNum);
+  }catch(e){}
 }
 function connectWS(){if(!WSU){setLive(false);return;}if(ws&&(ws.readyState===0||ws.readyState===1))return;
 try{ws=new WebSocket(WSU+'?role='+ROL);
@@ -535,10 +634,10 @@ if(msg.type==='sync'){
     if(ROL==='cash')renderMesaEditor();
   }
 }
-if(msg.type==='order'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){const k=cmdKey(msg);if(staCmds.some(c=>cmdKey(c)===k))return;staCmds.unshift({...msg,t:hhmm(),st:'pend'});renderStation();vib();toast('Nueva comanda',msg.label,'🍳');}}
-if(msg.type==='cancel'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){staCmds.unshift({...msg,t:hhmm(),st:'cancel',cancel:true});renderStation();vib();}}
-if((msg.type==='order-copy')&&ROL==='cash'){const k=cmdKey(msg);if(cajaOrderCopySeen.has(k))return;cajaOrderCopySeen.add(k);addCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});}
-if((msg.type==='cancel-copy')&&ROL==='cash'){subCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});}
+if(msg.type==='order'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){const k=cmdKey(msg);if(staCmds.some(c=>cmdKey(c)===k))return;staCmds.unshift({...msg,t:hhmm(),st:'pend'});renderStation();vib();toast('Nueva comanda',msg.label,'🍳');}_procesarComandaImpresionCocina(msg);}
+if(msg.type==='cancel'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){staCmds.unshift({...msg,t:hhmm(),st:'cancel',cancel:true});renderStation();vib();}_procesarAnulacionImpresionCocina(msg);}
+if((msg.type==='order-copy')&&ROL==='cash'){const k=cmdKey(msg);if(cajaOrderCopySeen.has(k))return;cajaOrderCopySeen.add(k);addCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});_procesarComandaImpresionCocina(msg);}
+if((msg.type==='cancel-copy')&&ROL==='cash'){subCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});_procesarAnulacionImpresionCocina(msg);}
 if(msg.type==='bill'&&ROL==='cash'){const k=cmdKey(msg);if(cajaCmds.some(c=>cmdKey(c)===k))return;cajaCmds.unshift({...msg,t:hhmm()});renderCash();vib();toast('Cuenta',msg.label,'🧾');}
 if(msg.type==='notify'&&msg.action==='ready'&&ROL==='waiter'){const txt=msg.label+': '+msg.item+' listo';toast('Plato listo',txt,'🍽️');addAviso(msg);vib();if(Notification?.permission==='granted')new Notification('Plato listo',{body:txt}).catch(()=>{});}
 if(msg.type==='menu-update'&&msg.menu){applyMenu(msg.menu);if(ROL==='waiter'&&mesaAct!=null){renderCatBar();renderMenuItems();}}
