@@ -528,15 +528,14 @@ window.cajaCobrar=cajaCobrar;
 let _printBusy=false;
 async function printTicket(data,isCopy){
   if(_printBusy)return;_printBusy=true;setTimeout(()=>{_printBusy=false;},5000);
-  let ticketId='';
-  try{const apiBase=WSU.replace('wss://','https://').replace('ws://','http://');const r=await fetch(apiBase+'/ticket-number',{method:'POST'});if(r.ok){const d=await r.json();ticketId=d.id;}}catch(e){}
-  if(!ticketId)ticketId=new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9999)).padStart(4,'0');
-  const total=data.total||0;
   try{
-    const r=await fetch('http://localhost:3333/print',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:data.items,total,label:data.label,ticketId,isCopy:!!isCopy})});
-    if(r.ok)toast('Impreso',data.label+' · Nº '+ticketId,'🖨️');
-    else toast('Error','No se pudo imprimir','⚠️');
-  }catch(e){toast('Sin impresora','Inicia el servidor de impresión','⚠️');}
+    if(!esEstacionImpresion()){ toast('Caja','La cuenta se imprime en caja','🧾'); return; }
+    const items=(data&&data.items)||[];
+    const total=items.reduce((s,x)=>s+(x.p||0)*(x.q||1),0);
+    const lineas=items.map(x=>({izq:(x.q||1)+'x '+x.n,der:eur((x.p||0)*(x.q||1))}));
+    const ok=await _print(ticketCajaXML({mesa:(data&&data.label)||'',fecha:hhmm(),lineas,total:eur(total)}));
+    toast(ok?'Impreso':'Sin impresora',(data&&data.label)||'',ok?'🖨️':'⚠️');
+  }catch(e){}
 }
 window.printTicket=printTicket;
 
@@ -595,28 +594,30 @@ function mergeSyncEntity(local,remote){
 function mergeSyncList(localList,remoteList){
   return remoteList.map(re=>mergeSyncEntity(localList.find(le=>le.id===re.id),re));
 }
-function _procesarComandaImpresionCocina(msg){
+async function _procesarComandaImpresionCocina(msg){
   try{
     if(!esEstacionImpresion())return;
     if(msg.dest!=='cocina')return;
-    if(!msg.orderNum||yaImpresa(msg.orderNum))return;
+    const dk='coc:'+(msg.id!=null?msg.id:((msg.orderNum||'')+'|'+(msg.mesa||'')));
+    if(yaImpresa(dk))return;
     const itemsCoc=(msg.items||[]).map(it=>({qty:it.q,nombre:it.n,notas:[]}));
     if(!itemsCoc.length)return;
     const mesaDisp=(typeof msg.mesa==='number')?msg.mesa:(msg.label||'');
-    _print(comandaCocinaXML({mesa:mesaDisp,pedido:msg.orderNum,fecha:hhmm(),items:itemsCoc}));
-    marcarImpresa(msg.orderNum);
+    const ok=await _print(comandaCocinaXML({mesa:mesaDisp,pedido:msg.orderNum||'',fecha:hhmm(),items:itemsCoc}));
+    if(ok)marcarImpresa(dk);
   }catch(e){}
 }
-function _procesarAnulacionImpresionCocina(msg){
+async function _procesarAnulacionImpresionCocina(msg){
   try{
     if(!esEstacionImpresion())return;
     if(msg.dest!=='cocina')return;
-    if(!msg.orderNum||yaImpresa(msg.orderNum))return;
+    const dk='anul:'+(msg.id!=null?msg.id:((msg.orderNum||'')+'|'+(msg.mesa||'')));
+    if(yaImpresa(dk))return;
     const itemsCoc=(msg.items||[]).map(it=>({qty:it.q,nombre:it.n}));
     if(!itemsCoc.length)return;
     const mesaDisp=(typeof msg.mesa==='number')?msg.mesa:(msg.label||'');
-    _print(comandaAnulacionXML({mesa:mesaDisp,fecha:hhmm(),items:itemsCoc}));
-    marcarImpresa(msg.orderNum);
+    const ok=await _print(comandaAnulacionXML({mesa:mesaDisp,fecha:hhmm(),items:itemsCoc}));
+    if(ok)marcarImpresa(dk);
   }catch(e){}
 }
 function connectWS(){if(!WSU){setLive(false);return;}if(ws&&(ws.readyState===0||ws.readyState===1))return;
@@ -636,8 +637,8 @@ if(msg.type==='sync'){
 }
 if(msg.type==='order'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){const k=cmdKey(msg);if(staCmds.some(c=>cmdKey(c)===k))return;staCmds.unshift({...msg,t:hhmm(),st:'pend'});renderStation();vib();toast('Nueva comanda',msg.label,'🍳');}_procesarComandaImpresionCocina(msg);}
 if(msg.type==='cancel'){const destMatch={kitchen:'cocina',bar:'barra'};const myDest=destMatch[ROL];if(myDest&&msg.dest===myDest){staCmds.unshift({...msg,t:hhmm(),st:'cancel',cancel:true});renderStation();vib();}_procesarAnulacionImpresionCocina(msg);}
-if((msg.type==='order-copy')&&ROL==='cash'){const k=cmdKey(msg);if(cajaOrderCopySeen.has(k))return;cajaOrderCopySeen.add(k);addCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});_procesarComandaImpresionCocina(msg);}
-if((msg.type==='cancel-copy')&&ROL==='cash'){subCajaOrder(msg);if(cajaReady)fetch('http://localhost:3333/print-comanda',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).catch(()=>{});_procesarAnulacionImpresionCocina(msg);}
+if((msg.type==='order-copy')&&ROL==='cash'){const k=cmdKey(msg);if(cajaOrderCopySeen.has(k))return;cajaOrderCopySeen.add(k);addCajaOrder(msg);_procesarComandaImpresionCocina(msg);}
+if((msg.type==='cancel-copy')&&ROL==='cash'){subCajaOrder(msg);_procesarAnulacionImpresionCocina(msg);}
 if(msg.type==='bill'&&ROL==='cash'){const k=cmdKey(msg);if(cajaCmds.some(c=>cmdKey(c)===k))return;cajaCmds.unshift({...msg,t:hhmm()});renderCash();vib();toast('Cuenta',msg.label,'🧾');}
 if(msg.type==='notify'&&msg.action==='ready'&&ROL==='waiter'){const txt=msg.label+': '+msg.item+' listo';toast('Plato listo',txt,'🍽️');addAviso(msg);vib();if(Notification?.permission==='granted')new Notification('Plato listo',{body:txt}).catch(()=>{});}
 if(msg.type==='menu-update'&&msg.menu){applyMenu(msg.menu);if(ROL==='waiter'&&mesaAct!=null){renderCatBar();renderMenuItems();}}
