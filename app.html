@@ -185,6 +185,7 @@ const emit=p=>{if(ws?.readyState===1)ws.send(JSON.stringify(p))};
 
 /* ============ IMPRESIÓN Epson TM-m30II (barra) ============ */
 const PRINTER_IP = '192.168.1.11';
+const LOGO_XML = '<image width="384" height="64" align="center" color="color_1" mode="mono">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/wAAAAAA//wAAAAAA//gAAAAAB//AAAAAAB//AAAAAAD/+AAAAAAH/8AAAAAAAD///AAAAAP//+AAAAAP//8AAAAAf//8AAAAAf//4AAAAA///wAAAAA///wAAAAAAf///4AAAB////wAAAB////gAAAD////AAAAD////AAAAH///+AAAAP///+AAAAAB/gAH+AAAD+AAP4AAAH+AAf4AAAP8AAfwAAAP8AA/wAAAf4AA/gAAAfwAB/gAAAAH8AAA/AAAPwAAB+AAAPwAAD8AAAfgAAH8AAAfgAAH4AAA/AAAP4AAB+AAAPwAAAAPgAAAPwAA/AAAAfgAA/AAAAfAAB+AAAA/AAB+AAAA+AAD8AAAB8AAD4AAAD8AAAA/AD/AD4AB8AP+AHwAB8Af+APwAD4Af8APgAD4A/8AfAAHwA/4AfAAPgB/4A+AAAB8B//+A+ADwD//4B4ADwH//4D4AHgH//wDwAPgP//wHwAPAP//gHgAeAf//APAAAD4H///gfAHgf///A8APgf//+B8APA///8B4AfA///8B4A+B///4DwA8D///4HwAAHgf///4HgPA////weAfB////geAeD////A8A+D////A8A8H///+B4B4P///+B4AAPB////8DweD////4PAcD////wPA8H////weB4H////geB4P////g8Dwf////A4AAeD/////Bw8H////8Hg8H////8Hh4P////4PB4f////4PDwf////weHg/////gcAAcH/////g54P////+Dx4f////+Djwf////8Hjw/////8HHg/////4PPB/////4OAA8P/////w9wf/////h7w//////B3g/////+D3h/////+DvD/////8HuD/////8HAB4f/////4fw//////w/h//////h/B//////B/D//////D+D/////+D8H/////+HgBw//////8Ph//////wfh//////w/D//////g+H//4P//h+H//////D8P//////DgDx/8AAf/8PD/wH8B/4fD/wH8D/weH/4AAP/w+H//AB//w8P/4D///h4f//AH//DwDh/8AAH/+HD/wH8B/8PH/wD8B/4cP/4AAP/4cP/8AA//w4f/wD///h4f//AH//hwHD/8AAD/+HH/wH8B/8OH/wD8B/8MP/4AAP/4cP/4AAP/4Yf/wD///w4///AD//x4HD/8AAD//DH/wH8B/+GP/wD8B/8Mf/4AAP/8Mf/wAAP/4c//wD///45///AD//w4OH/8AAB//jP/wH8B/+HP/wB8B/+Of/4AAP/8Mf/wAAH/8M//wD///4Z///AD//48OH/8B4B//hP/wH8B//Hf/wB8B/+Gf/4AAf/+M//wHwH/8N//wD///8Z//+AB//4cOP/8D8B//gP/wH8B//Df/wA8B//G//4D///+E//gHwH/+N//wD///8L//+AB//4cOP/8D+A//wf/wH8B//Df/wA8B//A//4D///+B//gPwD/+B//wD///8D//+AB//8ccP/8D+A//wf/wH8B//g//wAcB//A//4D////B//gP4D/+B//wD///+D//8AB//8OcP/8D+A//wf/wH8B//g//wAcB//h//4D////B//gP4D/+D//wD///+H//8AB//8Ocf/8D+A//w//wH8B//g//wAcB//h//4D////B//gP4D//D//wD///+H//8CA//+Ocf/8D+A//4//wH8B//w//wAMB//h//4D////B//gP4D//D//wD///+H//8DA//+Ocf/8D8B//4//wH8B//x//wAMB//h//4AB///D//gP4D//D//wD///+H//8DA//+O8f/8D8B//4//wH8B//x//wAMB//h//4AA///j//gP4D//D//wD///+H//4HA//+O8f/8AAB//4//wH8B//x//wAEB//h//4AA///j//gP4D//D//wD///+H//4HAf/+O8f/8AAD//4//wH8B//x//wAAB//h//4AA///j//gP4D//D//wD///+H//4HAf/+O8f/8AAH//4//wH8B//x//wMAB//h//4AA///j//gP4D//D//wD///+H//4HAf/+O8f/8AAP//4//wH8B//x//wMAB//h//4AA///j//gP4D//D//wD///+H//wPgf/+Ocf/8AAP//4//wH8B//x//wOAB//h//4B////D//gP4D//D//wD///+H//wPgf/+Ocf/8BgP//w//wH8B//w//wOAB//h//4D////B//gP4D//D//wD///+H//wHgP/+Ocf/8DwH//wf/wH8B//g//wOAB//h//4D////B//gP4D/+D//wD///+H//wAAP/+OcP/8DwH//wf/wH8B//g//wPAB//g//4D////B//gP4D/+B//wD///+D//gAAP/8OcP/8D4D//wf/wH8B//g//wPAB//A//4D////B//gP4D/+B//wD///+D//gAAP/8cOP/8D4D//gP/4D4D//Af/wPgB//A//4D///+B//gPwH/+B//wD///8D//gAAH/8cOP/8D8B//gP/4AgD//Ef/wPgB/+Ef/4D///8I//wAAH/8A//wAAf/4B//gfwH/48HH/8D8B//CP/8AAD/+GP/wPwD/+Mf/4D///8Mf/wAAP/8Y//wAAf/4R//Af4H/w4HD/8D8B//HH/8AAH/+OP/wPwB/8OP/4D///4cf/4AAf/4Yf/wAAf/w4//A/4D/w4Hj/8D+A/+HD/+AAP/8OH/wP4B/8OH/4D///4cP/8AA//w8f/wAAf/w4f/A/4D/hwDh/8D+A/8Pj//gA//4PD/wP4D/4fH/4D///w+P//AB//w8P/wAAf/h8f+A/4D/hwDw/8D/B/8Ph//4D//4fD/wP8D/4fD/8H///g+H//wH//h+H/4AAf/h8P/B/8H/DgBw//////4fw//////w/h//////w/h//////h/D//////B+H//////D+H/////+HgA4P/////w9wf/////g7w//////h7g//////D3h/////+DvD/////+HuD/////8HAA8H/////g54P/////Bx4f/////Dzwf////+Hjg/////8Hnh/////8PHB/////4OAAeD/////B48H////+Dw4P////+Hh4P////8PBwf////4PDw/////4OHg/////weAAPB////+DweD////8HgcH////8Hg8H////4PB4P////weB4f////weDwf////g8AAHg////4HgPB////wPAeB////wPAeD////geA8H////g8A8H////A8B4P///+B4AADwP///wPAHgf///geAPAf///AeAPA///+B8AeB///+B4AeB///+B4A8D///8DwAAB4D//+A+AD4D//8B8AHwH//8B8AHwH//4DwAPgP//4HwAPAf//wHwAeA///gPgAAA+Af/4B8AB8A//wD4AD4B//gDwAD4B//AHgAHwD//APgAHwD//APgAPgH/+AfAAAAfgAAAHwAAfAAAAPgAA/AAAAfgAA+AAAAfAAB8AAAA/AAD8AAAA+AAD4AAAB8AAAAH4AAAfgAAPwAAA/AAAfgAAA/AAAfgAAB+AAA/AAAD8AAA/AAAD8AAB+AAAH4AAAAD+AAD+AAAH+AAD8AAAH8AAH8AAAP4AAP4AAAPwAAP4AAAfwAAfwAAA/gAAfgAAAAA/+B/4AAAB/8D/4AAAB/4D/wAAAB/4H/gAAAD/wP/gAAAH/wP/AAAAP/gf+AAAAAAH///gAAAAP///AAAAAf///AAAAAf//+AAAAA///+AAAAB///8AAAAB///4AAAAAAA//4AAAAAB//4AAAAAB//wAAAAAD//gAAAAAD//gAAAAAH//AAAAAAP//AAAAAAAAA8AAAAAAAB8AAAAAAAH4AAAAAAAHwAAAAAAAHwAAAAAAAPAAAAAAAAfAAAAA</image>';
 function esEstacionImpresion(){ try{ return localStorage.getItem('qo_print_station')==='1'; }catch(e){ return false; } }
 function setEstacionImpresion(v){ try{ localStorage.setItem('qo_print_station', v?'1':'0'); }catch(e){} }
 function _impresas(){ try{ return JSON.parse(localStorage.getItem('qo_impresas')||'[]'); }catch(e){ return []; } }
@@ -215,6 +216,7 @@ function comandaCocinaXML(d){
   b+=_t('Mesa '+d.mesa,{align:'center',dw:true,dh:true});
   b+=_t('Pedido '+d.pedido,{align:'center'}); b+=_t(d.fecha,{align:'center'}); b+=_sep;
   d.items.forEach(it=>{ b+=_t(it.qty+'x '+it.nombre,{em:true,dh:true}); (it.notas||[]).forEach(n=> b+=_t('   '+n)); });
+  if(d.nota){ b+=_sep; b+=_t('NOTA:',{em:true}); b+=_t(d.nota,{em:true,dh:true}); }
   b+=_sep+_feed(1)+_cut; return b;
 }
 function comandaAnulacionXML(d){
@@ -229,7 +231,7 @@ function ticketCajaXML(d){
   const sepB='<text font="font_b">'+'-'.repeat(W)+'&#10;</text>';
   const row=(l,r,o)=>{ l=_ascii(String(l)); r=_ascii(String(r)); const sp=Math.max(1,W-l.length-r.length); return _t(l+' '.repeat(sp)+r,o); };
   let b='';
-  b+=_t('RUNFOLA PIZZAS',{align:'center',em:true,dh:true});
+  b+=LOGO_XML; b+=_feed(1);
   b+=_t('C.C. Zoco, calle la Orden 8',{align:'center',font:'font_b'});
   b+=_t('Local 20',{align:'center',font:'font_b'});
   b+=_t('Tel. 910 528 283',{align:'center',font:'font_b'});
@@ -618,7 +620,7 @@ async function _procesarComandaImpresionCocina(msg){
     const itemsCoc=(msg.items||[]).map(it=>({qty:it.q,nombre:it.n,notas:[]}));
     if(!itemsCoc.length)return;
     const mesaDisp=(typeof msg.mesa==='number')?msg.mesa:(msg.label||'');
-    const ok=await _print(comandaCocinaXML({mesa:mesaDisp,pedido:msg.orderNum||'',fecha:hhmm(),items:itemsCoc}));
+    const ok=await _print(comandaCocinaXML({mesa:mesaDisp,pedido:msg.orderNum||'',fecha:hhmm(),items:itemsCoc,nota:(msg.nota||'')}));
     if(ok)marcarImpresa(dk);
   }catch(e){}
 }
