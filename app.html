@@ -184,7 +184,7 @@ const totE=e=>e.items.reduce((s,x)=>s+x.p*x.q,0);
 const emit=p=>{if(ws?.readyState===1)ws.send(JSON.stringify(p))};
 
 /* ============ IMPRESIÓN Epson TM-m30II (barra) ============ */
-const PRINTER_IP = '192.168.1.18';
+const PRINTER_IP = '192.168.1.11';
 function esEstacionImpresion(){ try{ return localStorage.getItem('qo_print_station')==='1'; }catch(e){ return false; } }
 function setEstacionImpresion(v){ try{ localStorage.setItem('qo_print_station', v?'1':'0'); }catch(e){} }
 function _impresas(){ try{ return JSON.parse(localStorage.getItem('qo_impresas')||'[]'); }catch(e){ return []; } }
