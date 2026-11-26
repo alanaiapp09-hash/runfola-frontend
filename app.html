@@ -200,13 +200,8 @@ const _sep='<text>------------------------------------------&#10;</text>';
 function _setPrintStatus(ok){ const el=document.getElementById('printStatus'); if(el){ el.textContent= ok?'🖨️ Impresora OK':'🖨️ Sin impresora'; el.style.color= ok?'#2e7d32':'#c62828'; } }
 async function _print(bodyXml){
   try{
-    const url=`https://${PRINTER_IP}/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000`;
-    const xml=`<?xml version="1.0" encoding="utf-8"?>`+
-      `<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>`+
-      `<epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">`+bodyXml+`</epos-print>`+
-      `</s:Body></s:Envelope>`;
-    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/xml; charset=utf-8'},body:xml});
-    const txt=await r.text(); const ok=txt.includes('success="true"'); _setPrintStatus(ok); return ok;
+    const r=await fetch('http://localhost:3333/print',{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:bodyXml});
+    const ok=r.ok; _setPrintStatus(ok); return ok;
   }catch(e){ _setPrintStatus(false); return false; }
 }
 // d={mesa,pedido,fecha,items:[{qty,nombre,notas:[...]}]}
