@@ -204,12 +204,23 @@ async function _print(bodyXml){
     const ok=r.ok; _setPrintStatus(ok); return ok;
   }catch(e){ _setPrintStatus(false); return false; }
 }
-// d={mesa,pedido,fecha,items:[{qty,nombre,notas:[...]}]}
+function _obsLine(notas){
+  if(notas==null)return '';
+  const arr=Array.isArray(notas)?notas:[notas];
+  return arr.filter(x=>x!=null&&String(x).trim()!=='').join(', ');
+}
+// d={mesa,pedido,fecha,nota,items:[{qty,nombre,notas:[...]}]}
 function comandaCocinaXML(d){
   let b=''; b+=_t('COMANDA COCINA',{align:'center',em:true});
   b+=_t('Mesa '+d.mesa,{align:'center',dw:true,dh:true});
   b+=_t('Pedido '+d.pedido,{align:'center'}); b+=_t(d.fecha,{align:'center'}); b+=_sep;
-  d.items.forEach(it=>{ b+=_t(it.qty+'x '+it.nombre,{em:true,dh:true}); (it.notas||[]).forEach(n=> b+=_t('   '+n)); });
+  d.items.forEach(it=>{
+    b+=_t(it.qty+'x '+it.nombre,{em:true,dh:true});
+    const obs=_obsLine(it.notas);
+    if(obs) b+=_t('  >> '+obs,{em:true});
+  });
+  const notaGen=_obsLine(d.nota);
+  if(notaGen){ b+=_sep; b+=_t('NOTA: '+notaGen,{em:true}); }
   b+=_sep+_feed(1)+_cut; return b;
 }
 function comandaAnulacionXML(d){
@@ -610,10 +621,10 @@ async function _procesarComandaImpresionCocina(msg){
     if(msg.dest!=='cocina')return;
     const dk='coc:'+(msg.id!=null?msg.id:((msg.orderNum||'')+'|'+(msg.mesa||'')));
     if(yaImpresa(dk))return;
-    const itemsCoc=(msg.items||[]).map(it=>({qty:it.q,nombre:it.n,notas:[]}));
+    const itemsCoc=(msg.items||[]).map(it=>({qty:it.q,nombre:it.n,notas:it.notas||[]}));
     if(!itemsCoc.length)return;
     const mesaDisp=(typeof msg.mesa==='number')?msg.mesa:(msg.label||'');
-    const ok=await _print(comandaCocinaXML({mesa:mesaDisp,pedido:msg.orderNum||'',fecha:hhmm(),items:itemsCoc}));
+    const ok=await _print(comandaCocinaXML({mesa:mesaDisp,pedido:msg.orderNum||'',fecha:hhmm(),items:itemsCoc,nota:msg.nota||''}));
     if(ok)marcarImpresa(dk);
   }catch(e){}
 }
